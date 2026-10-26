@@ -1,0 +1,178 @@
+package app.neon.com.ui.profile
+
+import android.os.Build
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import app.neon.com.data.model.User
+import app.neon.com.data.model.UserStory
+import app.neon.com.data.repository.AuthRepository
+import app.neon.com.data.repository.SocialRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+data class ProfileUiState(
+    val currentUser: User? = null,
+    val stories: List<UserStory> = emptyList(),
+    val hasActiveStory: Boolean = false,
+    val newStoryCaption: String = "",
+    val newStoryColor: String = "#7928CA",
+    val isCreateStoryDialogVisible: Boolean = false,
+    val cacheSizeBytes: Long = 0L,
+    val formattedCacheSize: String = "0 KB",
+    val loggedInDeviceName: String = "",
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
+
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    private val socialRepository: SocialRepository,
+    private val authRepository: AuthRepository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(ProfileUiState())
+    val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
+
+    init {
+        loadProfileData()
+        loadDeviceInfo()
+    }
+
+    fun loadProfileData() {
+        val user = authRepository.getCachedUser() ?: authRepository.getCurrentFirebaseUser()?.let {
+            User(uid = it.uid, email = it.email ?: "")
+        }
+
+        _uiState.update { it.copy(currentUser = user) }
+
+        if (user != null) {
+            // Observe real-time profile (stat updates like followers, likesCount)
+            viewModelScope.launch {
+                socialRepository.observeUserProfile(user.uid).collect { updatedUser ->
+                    if (updatedUser != null) {
+                        _uiState.update { it.copy(currentUser = updatedUser) }
+                    }
+                }
+            }
+
+            // Observe stories
+            viewModelScope.launch {
+                socialRepository.observeUserStories(user.uid).collect { storyList ->
+                    _uiState.update {
+                        it.copy(
+                            stories = storyList,
+                            hasActiveStory = storyList.isNotEmpty()
+                        )
+                    }
+                }
+            }
+        }
+
+        refreshCacheSize()
+    }
+
+    private fun loadDeviceInfo() {
+        val model = Build.MODEL
+        val manufacturer = Build.MANUFACTURER.replaceFirstChar { it.uppercase() }
+        val release = Build.VERSION.RELEASE
+        val deviceString = "$manufacturer $model (Android $release)"
+        _uiState.update { it.copy(loggedInDeviceName = deviceString) }
+    }
+
+    fun refreshCacheSize() {
+        val bytes = socialRepository.getStorageCacheSizeInBytes()
+        val formatted = when {
+            bytes >= 1024 * 1024 -> String.format("%.2f MB", bytes / (1024f * 1024f))
+            bytes >= 1024 -> String.format("%.1f KB", bytes / 1024f)
+            else -> "$bytes B"
+        }
+        _uiState.update { it.copy(cacheSizeBytes = bytes, formattedCacheSize = formatted) }
+    }
+
+    fun clearCache() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            socialRepository.clearLocalCache().collect { result ->
+                _uiState.update { it.copy(isLoading = false) }
+                result.fold(
+                    onSuccess = {
+                        refreshCacheSize()
+                    },
+                    onFailure = { error ->
+                        _uiState.update { it.copy(errorMessage = error.localizedMessage) }
+                    }
+                )
+            }
+        }
+    }
+
+    fun updateProfile(displayName: String, bio: String, avatarColorHex: String, onSuccess: () -> Unit) {
+        val user = _uiState.value.currentUser ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            socialRepository.updateProfile(user.uid, displayName, bio, avatarColorHex).collect { result ->
+                _uiState.update { it.copy(isLoading = false) }
+                result.fold(
+                    onSuccess = {
+                        onSuccess()
+                    },
+                    onFailure = { error ->
+                        _uiState.update { it.copy(errorMessage = error.localizedMessage) }
+                    }
+                )
+            }
+        }
+    }
+
+    fun onNewStoryCaptionChanged(caption: String) {
+        _uiState.update { it.copy(newStoryCaption = caption) }
+    }
+
+    fun onNewStoryColorSelected(colorHex: String) {
+        _uiState.update { it.copy(newStoryColor = colorHex) }
+    }
+
+    fun openCreateStoryDialog() {
+        _uiState.update { it.copy(isCreateStoryDialogVisible = true, newStoryCaption = "") }
+    }
+
+    fun closeCreateStoryDialog() {
+        _uiState.update { it.copy(isCreateStoryDialogVisible = false) }
+    }
+
+    fun createStory(onSuccess: (storyId: String) -> Unit) {
+        val user = _uiState.value.currentUser ?: return
+        val caption = _uiState.value.newStoryCaption.trim()
+        val color = _uiState.value.newStoryColor
+
+        if (caption.isBlank()) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            socialRepository.createStory(user.uid, user.username, caption, color).collect { result ->
+                _uiState.update { it.copy(isLoading = false) }
+                result.fold(
+                    onSuccess = { story ->
+                        closeCreateStoryDialog()
+                        onSuccess(story.id)
+                    },
+                    onFailure = { error ->
+                        _uiState.update { it.copy(errorMessage = error.localizedMessage) }
+                    }
+                )
+            }
+        }
+    }
+
+    fun logout(onLoggedOut: () -> Unit) {
+        viewModelScope.launch {
+            authRepository.signOut()
+            onLoggedOut()
+        }
+    }
+}

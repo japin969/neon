@@ -1,0 +1,6 @@
+{
+  "name": "Neont",
+  "description": "Aplikasi Android Native 100% Kotlin Jetpack Compose untuk Chat Enkripsi, Musik, Leaderboard, dan Sosial.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
