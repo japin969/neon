@@ -1,6 +1,7 @@
 package app.neon.com.data.local
 
 import android.content.Context
+import app.neon.com.data.model.ChatItem
 import app.neon.com.data.model.User
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -19,9 +20,11 @@ import javax.inject.Singleton
 data class LocalDatabaseCache(
     var currentUser: User? = null,
     var cachedUsers: MutableMap<String, User> = mutableMapOf(),
-    var cachedChats: MutableList<app.neon.com.data.model.ChatItem> = mutableListOf(),
+    var cachedChats: MutableList<ChatItem> = mutableListOf(),
     var cachedFollowers: MutableList<String> = mutableListOf(),
-    var lastSyncTimestamp: Long = 0L
+    var lastSyncTimestamp: Long = 0L,
+    var cachedPinHash: String? = null,
+    var isPinEnabled: Boolean = false
 )
 
 @Singleton
@@ -38,6 +41,10 @@ class FileDatabaseManager @Inject constructor(
     val currentUserFlow: Flow<User?> = _currentUserFlow.asStateFlow()
 
     private var inMemoryCache: LocalDatabaseCache = LocalDatabaseCache()
+
+    // Volatile session flag: tracks if the user unlocked PIN during current app process
+    @Volatile
+    private var isPinUnlockedInSession: Boolean = false
 
     init {
         loadFromDisk()
@@ -79,13 +86,13 @@ class FileDatabaseManager @Inject constructor(
         persistToDisk()
     }
 
-    suspend fun saveCachedChats(chats: List<app.neon.com.data.model.ChatItem>) {
+    suspend fun saveCachedChats(chats: List<ChatItem>) {
         inMemoryCache.cachedChats.clear()
         inMemoryCache.cachedChats.addAll(chats)
         persistToDisk()
     }
 
-    fun getCachedChats(): List<app.neon.com.data.model.ChatItem> {
+    fun getCachedChats(): List<ChatItem> {
         return inMemoryCache.cachedChats.toList()
     }
 
@@ -93,14 +100,33 @@ class FileDatabaseManager @Inject constructor(
         return inMemoryCache.currentUser
     }
 
+    suspend fun savePinCache(pinHash: String?, isEnabled: Boolean) {
+        inMemoryCache.cachedPinHash = pinHash
+        inMemoryCache.isPinEnabled = isEnabled
+        persistToDisk()
+    }
+
+    fun getCachedPinHash(): String? = inMemoryCache.cachedPinHash
+    fun isPinEnabled(): Boolean = inMemoryCache.isPinEnabled
+
+    fun setPinUnlockedInSession(unlocked: Boolean) {
+        isPinUnlockedInSession = unlocked
+    }
+
+    fun isPinUnlockedInSession(): Boolean = isPinUnlockedInSession
+
     suspend fun clearSession() {
         inMemoryCache.currentUser = null
+        inMemoryCache.cachedPinHash = null
+        inMemoryCache.isPinEnabled = false
+        isPinUnlockedInSession = false
         _currentUserFlow.value = null
         persistToDisk()
     }
 
     suspend fun clearAllCache() = withContext(Dispatchers.IO) {
         inMemoryCache = LocalDatabaseCache()
+        isPinUnlockedInSession = false
         _currentUserFlow.value = null
         if (cacheFile.exists()) {
             cacheFile.delete()

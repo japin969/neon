@@ -37,6 +37,8 @@ class AuthRepository @Inject constructor(
 
     fun getCachedUser(): User? = localDatabase.getCurrentUser()
 
+    fun getCurrentUser(): User? = localDatabase.getCurrentUser()
+
     /**
      * Sign In existing user with Email and Password.
      */

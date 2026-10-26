@@ -43,22 +43,59 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import android.net.Uri
+import android.util.Base64
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+import java.io.InputStream
+
 @Composable
 fun EditProfileScreen(
     viewModel: ProfileViewModel,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsState()
     val user = state.currentUser
+    val scrollState = rememberScrollState()
 
     var displayName by remember(user?.displayName) { mutableStateOf(user?.displayName ?: "") }
     var bio by remember(user?.bio) { mutableStateOf(user?.bio ?: "") }
     var selectedColor by remember(user?.avatarColorHex) { mutableStateOf(user?.avatarColorHex ?: "#00FF66") }
+    var avatarUrl by remember(user?.avatarUrl) { mutableStateOf(user?.avatarUrl ?: "") }
+
+    // Image Picker Launcher for Photo Upload
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { selectedUri ->
+            try {
+                val inputStream: InputStream? = context.contentResolver.openInputStream(selectedUri)
+                val bytes = inputStream?.readBytes()
+                inputStream?.close()
+                if (bytes != null && bytes.isNotEmpty()) {
+                    val base64String = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                    avatarUrl = "data:image/jpeg;base64,$base64String"
+                }
+            } catch (e: Exception) {
+                // If Base64 reading fails, fallback to uri string
+                avatarUrl = selectedUri.toString()
+            }
+        }
+    }
 
     val colors = listOf("#00FF66", "#00E5FF", "#FF007F", "#7928CA", "#FF9100", "#00F5D4", "#F72585")
     val darkBg = Color(0xFF0D0E15)
     val darkCard = Color(0xFF161824)
     val neonGreen = Color(0xFF00FF66)
+    val neonCyan = Color(0xFF00E5FF)
 
     Box(
         modifier = Modifier
@@ -93,10 +130,11 @@ fun EditProfileScreen(
             Column(
                 modifier = Modifier
                     .weight(1f)
+                    .verticalScroll(scrollState)
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Avatar Preview with chosen color
+                // Avatar Preview with chosen color or uploaded photo
                 val color = try {
                     Color(android.graphics.Color.parseColor(selectedColor))
                 } catch (_: Exception) {
@@ -105,21 +143,83 @@ fun EditProfileScreen(
 
                 Box(
                     modifier = Modifier
-                        .size(90.dp)
+                        .size(100.dp)
                         .clip(CircleShape)
                         .background(color)
-                        .border(2.dp, Color.White.copy(alpha = 0.5f), CircleShape),
+                        .border(3.dp, Color.White.copy(alpha = 0.6f), CircleShape)
+                        .clickable { imagePickerLauncher.launch("image/*") },
                     contentAlignment = Alignment.Center
                 ) {
+                    if (avatarUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = avatarUrl,
+                            contentDescription = "Avatar Foto",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Text(
+                            text = user?.getInitials() ?: "NE",
+                            fontSize = 38.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.Black
+                        )
+                    }
+
+                    // Camera overlay icon
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(30.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.75f))
+                            .border(1.dp, neonGreen, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PhotoCamera,
+                            contentDescription = "Pilih Foto",
+                            tint = neonGreen,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Button(
+                    onClick = { imagePickerLauncher.launch("image/*") },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E2338)),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AddPhotoAlternate,
+                        contentDescription = null,
+                        tint = neonCyan,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = user?.getInitials() ?: "NE",
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.Black
+                        text = if (avatarUrl.isNotBlank()) "Ganti Foto" else "Unggah Foto Profil",
+                        fontSize = 12.sp,
+                        color = Color.White
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                if (avatarUrl.isNotBlank()) {
+                    Text(
+                        text = "Hapus Foto",
+                        fontSize = 11.sp,
+                        color = Color(0xFFFF5252),
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier
+                            .clickable { avatarUrl = "" }
+                            .padding(top = 4.dp, bottom = 12.dp)
+                    )
+                } else {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
                 Text(
                     text = "Pilih Warna Latar Avatar:",
@@ -160,7 +260,7 @@ fun EditProfileScreen(
                     }
                 }
 
-                // Name Input
+                // Display Name Input
                 OutlinedTextField(
                     value = displayName,
                     onValueChange = { displayName = it },
@@ -170,7 +270,8 @@ fun EditProfileScreen(
                         focusedBorderColor = neonGreen,
                         unfocusedBorderColor = Color(0xFF262A3E),
                         focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        unfocusedTextColor = Color.White,
+                        cursorColor = neonGreen
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -187,7 +288,27 @@ fun EditProfileScreen(
                         focusedBorderColor = neonGreen,
                         unfocusedBorderColor = Color(0xFF262A3E),
                         focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        unfocusedTextColor = Color.White,
+                        cursorColor = neonGreen
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Custom Avatar URL Input (Alternative to file picker)
+                OutlinedTextField(
+                    value = if (avatarUrl.startsWith("data:")) "Foto lokal tersimpan (Base64)" else avatarUrl,
+                    onValueChange = { avatarUrl = it },
+                    label = { Text("URL Foto Profil (Opsional)", color = Color(0xFF888EA8)) },
+                    singleLine = true,
+                    enabled = !avatarUrl.startsWith("data:"),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = neonCyan,
+                        unfocusedBorderColor = Color(0xFF262A3E),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        cursorColor = neonCyan
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -202,7 +323,7 @@ fun EditProfileScreen(
             ) {
                 Button(
                     onClick = {
-                        viewModel.updateProfile(displayName, bio, selectedColor) {
+                        viewModel.updateProfile(displayName, bio, selectedColor, avatarUrl) {
                             onNavigateBack()
                         }
                     },
@@ -221,7 +342,7 @@ fun EditProfileScreen(
                         )
                     } else {
                         Text(
-                            text = "SIMPAN PERUBAHAN",
+                            text = "SIMPAN PERUBAHAN KE FIREBASE",
                             color = Color.Black,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp

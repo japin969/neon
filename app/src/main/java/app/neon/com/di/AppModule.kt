@@ -71,4 +71,11 @@ object AppModule {
     ): app.neon.com.data.player.MusicController {
         return app.neon.com.data.player.MusicController(context)
     }
+
+    @Provides
+    fun provideWebRTCClient(
+        @ApplicationContext context: Context
+    ): app.neon.com.data.webrtc.WebRTCClient {
+        return app.neon.com.data.webrtc.WebRTCClient(context)
+    }
 }

@@ -131,10 +131,12 @@ fun ChatDetailScreen(
                     }
                 },
                 onAudioCall = {
-                    onStartAudioCall(recipientId, state.chatName)
+                    val targetId = if (recipientId.isNotBlank()) recipientId else if (state.recipientId.isNotBlank()) state.recipientId else chatId
+                    onStartAudioCall(targetId, state.chatName.ifBlank { "Teman Neont" })
                 },
                 onVideoCall = {
-                    onStartVideoCall(recipientId, state.chatName)
+                    val targetId = if (recipientId.isNotBlank()) recipientId else if (state.recipientId.isNotBlank()) state.recipientId else chatId
+                    onStartVideoCall(targetId, state.chatName.ifBlank { "Teman Neont" })
                 }
             )
 

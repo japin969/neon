@@ -111,20 +111,70 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun updateProfile(displayName: String, bio: String, avatarColorHex: String, onSuccess: () -> Unit) {
+    fun updateProfile(
+        displayName: String,
+        bio: String,
+        avatarColorHex: String,
+        avatarUrl: String = "",
+        onSuccess: () -> Unit
+    ) {
         val user = _uiState.value.currentUser ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            socialRepository.updateProfile(user.uid, displayName, bio, avatarColorHex).collect { result ->
+            val flow = if (avatarUrl.isNotBlank()) {
+                socialRepository.updateProfileWithAvatar(user.uid, displayName, bio, avatarColorHex, avatarUrl)
+            } else {
+                socialRepository.updateProfile(user.uid, displayName, bio, avatarColorHex)
+            }
+
+            flow.collect { result ->
                 _uiState.update { it.copy(isLoading = false) }
                 result.fold(
                     onSuccess = {
+                        _uiState.update { current ->
+                            current.copy(
+                                currentUser = current.currentUser?.copy(
+                                    displayName = displayName.trim(),
+                                    bio = bio.trim(),
+                                    avatarColorHex = avatarColorHex,
+                                    avatarUrl = if (avatarUrl.isNotBlank()) avatarUrl.trim() else current.currentUser.avatarUrl
+                                )
+                            )
+                        }
                         onSuccess()
                     },
                     onFailure = { error ->
                         _uiState.update { it.copy(errorMessage = error.localizedMessage) }
                     }
                 )
+            }
+        }
+    }
+
+    fun togglePrivacyLastSeen() {
+        val user = _uiState.value.currentUser ?: return
+        val newShowLastSeen = !user.showLastSeen
+        viewModelScope.launch {
+            socialRepository.updatePrivacySettings(user.uid, newShowLastSeen, user.showProfilePhoto).collect { result ->
+                result.onSuccess {
+                    _uiState.update { current ->
+                        current.copy(currentUser = current.currentUser?.copy(showLastSeen = newShowLastSeen))
+                    }
+                }
+            }
+        }
+    }
+
+    fun togglePrivacyProfilePhoto() {
+        val user = _uiState.value.currentUser ?: return
+        val newShowProfilePhoto = !user.showProfilePhoto
+        viewModelScope.launch {
+            socialRepository.updatePrivacySettings(user.uid, user.showLastSeen, newShowProfilePhoto).collect { result ->
+                result.onSuccess {
+                    _uiState.update { current ->
+                        current.copy(currentUser = current.currentUser?.copy(showProfilePhoto = newShowProfilePhoto))
+                    }
+                }
             }
         }
     }

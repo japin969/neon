@@ -116,6 +116,8 @@ dependencies {
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    implementation("com.google.firebase:firebase-appcheck-debug")
 
     // Network & Serialization (Retrofit, OkHttp, Gson)
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
@@ -133,6 +135,9 @@ dependencies {
     implementation("androidx.media3:media3-ui:$media3Version")
     implementation("androidx.media3:media3-session:$media3Version")
     implementation("androidx.media3:media3-common:$media3Version")
+
+    // WebRTC Peer-to-Peer Realtime Calling
+    implementation("io.getstream:stream-webrtc-android:1.3.10")
 
     // Dependency Injection (Hilt)
     implementation("com.google.dagger:hilt-android:2.53.1")

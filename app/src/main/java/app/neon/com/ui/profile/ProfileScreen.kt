@@ -58,6 +58,7 @@ fun ProfileScreen(
     val state by viewModel.uiState.collectAsState()
     val user = state.currentUser
     val scrollState = rememberScrollState()
+    var isLikeInfoVisible by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
     val darkBg = Color(0xFF0D0E15)
     val darkCard = Color(0xFF161824)
@@ -219,7 +220,7 @@ fun ProfileScreen(
                         count = "${user?.likesCount ?: 0}",
                         label = "Like Out",
                         accentColor = neonPink,
-                        onClick = {}
+                        onClick = { isLikeInfoVisible = true }
                     )
 
                     Box(
@@ -340,6 +341,38 @@ fun ProfileScreen(
                 onConfirm = {
                     viewModel.createStory { storyId ->
                         onNavigateToStory(user?.uid ?: "")
+                    }
+                }
+            )
+        }
+
+        // Dialog Informasi Like Out
+        if (isLikeInfoVisible) {
+            AlertDialog(
+                onDismissRequest = { isLikeInfoVisible = false },
+                containerColor = Color(0xFF161824),
+                title = {
+                    Text(
+                        text = "Tentang Like Out",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Skor Like Out mencerminkan akumulasi total like dan apresiasi yang kamu terima dari pesan chat, profil, dan story di Neont. Skor ini juga mempengaruhi peringkatmu di Leaderboard!",
+                        color = Color(0xFFC0C4D6),
+                        fontSize = 13.sp,
+                        lineHeight = 19.sp
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { isLikeInfoVisible = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00FF66))
+                    ) {
+                        Text("Mengerti", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
                 }
             )

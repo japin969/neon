@@ -14,8 +14,11 @@ data class User(
     val followersCount: Int = 0,
     val followingCount: Int = 0,
     val likesCount: Int = 0,
+    val showLastSeen: Boolean = true,
+    val showProfilePhoto: Boolean = true,
     val createdAt: Long = System.currentTimeMillis()
 ) {
+    val id: String get() = uid
     /**
      * Extracts 2-character initials for default avatar generation.
      */

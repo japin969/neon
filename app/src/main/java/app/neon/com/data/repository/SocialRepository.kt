@@ -87,6 +87,76 @@ class SocialRepository @Inject constructor(
     }
 
     /**
+     * Updates user's display name, bio, avatar color, and optional avatar URL/photo.
+     */
+    fun updateProfileWithAvatar(
+        userId: String,
+        displayName: String,
+        bio: String,
+        avatarColor: String,
+        avatarUrl: String
+    ): Flow<Result<Boolean>> = flow {
+        try {
+            val updates = hashMapOf<String, Any>(
+                "/users/$userId/displayName" to displayName.trim(),
+                "/users/$userId/bio" to bio.trim(),
+                "/users/$userId/avatarColorHex" to avatarColor,
+                "/users/$userId/avatarUrl" to avatarUrl.trim(),
+                "/leaderboard/$userId/displayName" to displayName.trim(),
+                "/leaderboard/$userId/avatarColorHex" to avatarColor
+            )
+
+            firebaseDatabase.reference.updateChildren(updates).await()
+
+            val cached = localDatabase.getCurrentUser()
+            if (cached != null && cached.uid == userId) {
+                val updated = cached.copy(
+                    displayName = displayName.trim(),
+                    bio = bio.trim(),
+                    avatarColorHex = avatarColor,
+                    avatarUrl = avatarUrl.trim()
+                )
+                localDatabase.saveCurrentUser(updated)
+            }
+
+            emit(Result.success(true))
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    /**
+     * Updates Privacy Settings (Last Seen, Profile Photo) in Firebase and local database.
+     */
+    fun updatePrivacySettings(
+        userId: String,
+        showLastSeen: Boolean,
+        showProfilePhoto: Boolean
+    ): Flow<Result<Boolean>> = flow {
+        try {
+            val updates = hashMapOf<String, Any>(
+                "/users/$userId/showLastSeen" to showLastSeen,
+                "/users/$userId/showProfilePhoto" to showProfilePhoto
+            )
+
+            firebaseDatabase.reference.updateChildren(updates).await()
+
+            val cached = localDatabase.getCurrentUser()
+            if (cached != null && cached.uid == userId) {
+                val updated = cached.copy(
+                    showLastSeen = showLastSeen,
+                    showProfilePhoto = showProfilePhoto
+                )
+                localDatabase.saveCurrentUser(updated)
+            }
+
+            emit(Result.success(true))
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
+
+    /**
      * Follows a target user: updates /followers and /following, and increments counters.
      */
     fun followUser(currentUserId: String, targetUserId: String): Flow<Result<Boolean>> = flow {
