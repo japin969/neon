@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "app.neon.com"
-        minSdk = 26
+        minSdk = 24
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
@@ -49,6 +49,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -84,6 +85,7 @@ android {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     // AndroidX Core & Lifecycle
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
@@ -128,6 +130,7 @@ dependencies {
 
     // Image Loading (Coil Compose)
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("io.github.webrtc-sdk:android:125.6422.07")
 
     // Media Playback (AndroidX Media3 ExoPlayer)
     val media3Version = "1.5.0"

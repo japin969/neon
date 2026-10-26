@@ -54,26 +54,22 @@ class WebRTCClient(
     var onIceCandidateCreated: ((IceCandidate) -> Unit)? = null
     var onConnectionStateChanged: ((PeerConnection.PeerConnectionState) -> Unit)? = null
 
-    private val iceServers: List<PeerConnection.IceServer> = listOf(
-        PeerConnection.IceServer.builder("stun:stun.relay.metered.ca:80")
-            .createIceServer(),
-        PeerConnection.IceServer.builder("turn:global.relay.metered.ca:80")
-            .setUsername("0a146a9c7f58392cd6533163")
-            .setPassword("pYSbt7h/oD6THVzZ")
-            .createIceServer(),
-        PeerConnection.IceServer.builder("turn:global.relay.metered.ca:80?transport=tcp")
-            .setUsername("0a146a9c7f58392cd6533163")
-            .setPassword("pYSbt7h/oD6THVzZ")
-            .createIceServer(),
-        PeerConnection.IceServer.builder("turn:global.relay.metered.ca:443")
-            .setUsername("0a146a9c7f58392cd6533163")
-            .setPassword("pYSbt7h/oD6THVzZ")
-            .createIceServer(),
-        PeerConnection.IceServer.builder("turns:global.relay.metered.ca:443?transport=tcp")
-            .setUsername("0a146a9c7f58392cd6533163")
-            .setPassword("pYSbt7h/oD6THVzZ")
-            .createIceServer()
-    )
+    private val iceServers: List<PeerConnection.IceServer> by lazy {
+        val urls = context.getString(app.neon.com.R.string.turn_urls).split(",")
+        val username = context.getString(app.neon.com.R.string.turn_username)
+        val password = context.getString(app.neon.com.R.string.turn_password)
+        
+        urls.map { url ->
+            if (url.startsWith("stun:")) {
+                PeerConnection.IceServer.builder(url.trim()).createIceServer()
+            } else {
+                PeerConnection.IceServer.builder(url.trim())
+                    .setUsername(username)
+                    .setPassword(password)
+                    .createIceServer()
+            }
+        }
+    }
 
     private fun initPeerConnectionFactory(): PeerConnectionFactory {
         val options = PeerConnectionFactory.InitializationOptions.builder(context)
