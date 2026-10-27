@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Neont"
 include(":app")
+include(":compose-symphony")

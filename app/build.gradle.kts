@@ -102,9 +102,8 @@ dependencies {
     // Coil (Gambar)
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("androidx.compose.ui:ui-text-google-fonts:1.7.6")
-    implementation("com.compose.symphony:compose-symphony:1.0.0")
     implementation("com.vanniktech:emoji-ios:0.21.0")
-    implementation("com.vanniktech:emoji-compose:0.21.0")
+    implementation(project(":compose-symphony"))
 
     // WebRTC
     implementation("io.github.webrtc-sdk:android:125.6422.07")
