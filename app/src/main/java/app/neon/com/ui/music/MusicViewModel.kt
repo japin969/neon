@@ -102,7 +102,7 @@ class MusicViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            musicRepository.getRecommendedSongs().collect { result ->
+            musicRepository.getPopularSongs().collect { result ->
                 result.onSuccess { list ->
                     _uiState.update { it.copy(recommendedSongs = list) }
                 }
@@ -159,7 +159,7 @@ class MusicViewModel @Inject constructor(
             _uiState.update { it.copy(isSearching = true) }
             delay(400) // Debounce typing
 
-            musicRepository.searchSongs(query).collect { result ->
+            musicRepository.searchSongsUnified(query).collect { result ->
                 result.fold(
                     onSuccess = { songs ->
                         _uiState.update { it.copy(searchResults = songs, isSearching = false) }

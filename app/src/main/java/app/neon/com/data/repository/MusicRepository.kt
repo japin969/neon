@@ -365,4 +365,23 @@ class MusicRepository(
         val s = totalSec % 60
         return "%d:%02d".format(m, s)
     }
+    fun toggleLoveSong(userId: String, song: Song, currentLoved: Boolean): Flow<Result<Boolean>> = flow {
+        try {
+            val ref = com.google.firebase.database.FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(userId)
+                .child("lovedSongs")
+                .child(song.id)
+
+            val newLoved = !currentLoved
+            if (newLoved) {
+                ref.setValue(true).await()
+            } else {
+                ref.removeValue().await()
+            }
+            emit(Result.success(newLoved))
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
 }
