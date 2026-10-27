@@ -1,5 +1,6 @@
 package app.neon.com.data.repository
 
+import app.neon.com.data.model.UserStory
 import app.neon.com.data.local.FileDatabaseManager
 import app.neon.com.data.model.LeaderboardEntry
 import app.neon.com.data.model.User
@@ -390,7 +391,7 @@ class SocialRepository @Inject constructor(
                         stories.add(story)
                     }
                 }
-                trySend(stories.sortedBy { it.timestamp } as List<UserStory>)
+                trySend(stories.sortedBy { it.timestamp })
             }
 
             override fun onCancelled(error: DatabaseError) {
