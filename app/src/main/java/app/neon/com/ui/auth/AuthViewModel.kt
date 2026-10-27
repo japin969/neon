@@ -250,4 +250,46 @@ class AuthViewModel @Inject constructor(
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
     }
+
+    fun canChangeUsername(user: User): Boolean {
+        return authRepository.canChangeUsername(user)
+    }
+    
+    fun canChangeDisplayName(user: User): Boolean {
+        return authRepository.canChangeDisplayName(user)
+    }
+    
+    fun getRemainingDays(lastChange: Long, cooldownDays: Int): Int {
+        return authRepository.getRemainingDays(lastChange, cooldownDays)
+    }
+
+    fun updateProfile(uid: String, newDisplay: String, newUsername: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            
+            val current = _uiState.value.currentUser
+            if (current != null) {
+                var errorOccurred = false
+                
+                // Update Display Name (Kalau berubah)
+                if (newDisplay != current.displayName && authRepository.canChangeDisplayName(current)) {
+                    val res = authRepository.updateDisplayName(uid, newDisplay)
+                    if (res.isFailure) errorOccurred = true
+                }
+                
+                // Update Username (Kalau berubah)
+                if (newUsername != current.username && authRepository.canChangeUsername(current)) {
+                    val res = authRepository.updateUsername(uid, newUsername)
+                    if (res.isFailure) errorOccurred = true
+                }
+                
+                _uiState.update { 
+                    it.copy(
+                        isLoading = false, 
+                        errorMessage = if (errorOccurred) "Gagal update profil" else null
+                    ) 
+                }
+            }
+        }
+    }
 }

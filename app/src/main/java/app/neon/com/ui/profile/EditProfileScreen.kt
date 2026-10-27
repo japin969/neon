@@ -67,8 +67,8 @@ fun EditProfileScreen(
     val scrollState = rememberScrollState()
 
     var displayName by remember(user?.displayName) { mutableStateOf(user?.displayName ?: "") }
-    var bio by remember(user?.bio) { mutableStateOf(user?.bio ?: "") }
-    var selectedColor by remember(user?.avatarColorHex) { mutableStateOf(user?.avatarColorHex ?: "#00FF66") }
+    var username by remember(user?.username) { mutableStateOf(user?.username ?: "") }
+        var selectedColor by remember(user?.avatarColorHex) { mutableStateOf(user?.avatarColorHex ?: "#00FF66") }
     var avatarUrl by remember(user?.avatarUrl) { mutableStateOf(user?.avatarUrl ?: "") }
 
     // Image Picker Launcher for Photo Upload
@@ -278,12 +278,20 @@ fun EditProfileScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Bio Input
+                // Username Input
                 OutlinedTextField(
-                    value = bio,
-                    onValueChange = { bio = it },
-                    label = { Text("Bio", color = Color(0xFF888EA8)) },
-                    maxLines = 3,
+                    value = username,
+                    onValueChange = { username = it.lowercase().filter { c -> c.isLetterOrDigit() || c == '_' } },
+                    label = { Text("Username", color = Color(0xFF888EA8)) },
+                    leadingIcon = { Text("@", color = Color.Gray) },
+                    singleLine = true,
+                    enabled = user?.let { viewModel.canChangeUsername(it) } ?: false,
+                    supportingText = {
+                        if (user != null && !viewModel.canChangeUsername(user)) {
+                            val days = viewModel.getRemainingDays(user.lastUsernameChange, 30)
+                            Text("Bisa diganti dalam $days hari", color = Color.Red, fontSize = 11.sp)
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = neonGreen,
                         unfocusedBorderColor = Color(0xFF262A3E),
@@ -323,9 +331,12 @@ fun EditProfileScreen(
             ) {
                 Button(
                     onClick = {
-                        viewModel.updateProfile(displayName, bio, selectedColor, avatarUrl) {
-                            onNavigateBack()
-                        }
+                        viewModel.updateProfile(
+                            uid = user?.uid ?: "",
+                            newDisplay = displayName,
+                            newUsername = username
+                        )
+                        onNavigateBack()
                     },
                     enabled = !state.isLoading,
                     modifier = Modifier

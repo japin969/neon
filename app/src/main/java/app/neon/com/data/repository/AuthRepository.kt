@@ -179,4 +179,66 @@ class AuthRepository @Inject constructor(
             try { block() } catch (_: Exception) {}
         }
     }
+
+    // --- FITUR UPDATE PROFILE (DISPLAY & USERNAME) ---
+    fun canChangeDisplayName(user: User): Boolean {
+        val now = System.currentTimeMillis()
+        val sevenDaysMs = 7L * 24 * 60 * 60 * 1000
+        return (now - user.lastDisplayNameChange) >= sevenDaysMs
+    }
+
+    fun canChangeUsername(user: User): Boolean {
+        val now = System.currentTimeMillis()
+        val thirtyDaysMs = 30L * 24 * 60 * 60 * 1000
+        return (now - user.lastUsernameChange) >= thirtyDaysMs
+    }
+
+    fun getRemainingDays(lastChange: Long, cooldownDays: Int): Int {
+        val now = System.currentTimeMillis()
+        val cooldownMs = cooldownDays.toLong() * 24 * 60 * 60 * 1000
+        val elapsed = now - lastChange
+        if (elapsed >= cooldownMs) return 0
+        return ((cooldownMs - elapsed) / (24 * 60 * 60 * 1000)).toInt() + 1
+    }
+
+    suspend fun updateDisplayName(uid: String, newDisplayName: String): Result<Unit> {
+        return try {
+            val ref = firebaseDatabase.getReference("users").child(uid)
+            val updates = mapOf(
+                "displayName" to newDisplayName,
+                "lastDisplayNameChange" to System.currentTimeMillis()
+            )
+            ref.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateUsername(uid: String, newUsername: String): Result<Unit> {
+        return try {
+            val sanitized = newUsername.trim().lowercase()
+            // Cek ketersediaan dulu
+            val usernameRef = firebaseDatabase.getReference("usernames").child(sanitized)
+            val snapshot = usernameRef.get().await()
+            if (snapshot.exists()) {
+                return Result.failure(Exception("Username sudah terpakai"))
+            }
+            
+            // Update di users
+            val userRef = firebaseDatabase.getReference("users").child(uid)
+            val updates = mapOf(
+                "username" to sanitized,
+                "lastUsernameChange" to System.currentTimeMillis()
+            )
+            userRef.updateChildren(updates).await()
+            
+            // Daftarin username baru
+            usernameRef.setValue(uid).await()
+            
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

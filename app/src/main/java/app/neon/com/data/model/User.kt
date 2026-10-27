@@ -16,7 +16,9 @@ data class User(
     val likesCount: Int = 0,
     val showLastSeen: Boolean = true,
     val showProfilePhoto: Boolean = true,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val lastDisplayNameChange: Long = 0L,
+    val lastUsernameChange: Long = 0L
 ) {
     val id: String get() = uid
     /**
