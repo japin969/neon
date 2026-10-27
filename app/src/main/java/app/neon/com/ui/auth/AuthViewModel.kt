@@ -250,13 +250,4 @@ class AuthViewModel @Inject constructor(
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
     }                        
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false, 
-                        errorMessage = if (errorOccurred) "Gagal update profil" else null
-                    ) 
-                }
-            }
-        }
-    }
 }
