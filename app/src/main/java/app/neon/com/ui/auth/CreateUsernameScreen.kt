@@ -37,6 +37,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
@@ -61,6 +63,7 @@ fun CreateUsernameScreen(
     val neonGreen = Color(0xFF00FF66)
     val neonCyan = Color(0xFF00E5FF)
     val darkCardBg = Color(0xFF161824)
+    val focusRequester = remember { FocusRequester() }
 
     // Dynamic initial 2-letter avatar generator
     val initials = remember(state.username) {
@@ -117,21 +120,6 @@ fun CreateUsernameScreen(
             )
 
             // Live Initial Avatar Preview Generator
-            Box(
-                modifier = Modifier
-                    .size(110.dp)
-                    .clip(CircleShape)
-                    .background(previewColor)
-                    .border(3.dp, Color.White.copy(alpha = 0.4f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = initials,
-                    fontSize = 44.sp,
-                    fontWeight = FontWeight.Black,
-                    color = Color.Black
-                )
-            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -237,7 +225,7 @@ fun CreateUsernameScreen(
                         unfocusedTextColor = Color.White,
                         cursorColor = neonGreen
                     ),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
                 )
 
                 // Feedback status label

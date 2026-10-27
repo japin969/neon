@@ -216,10 +216,6 @@ class AuthViewModel @Inject constructor(
             _uiState.update { it.copy(errorMessage = "Username minimal 3 karakter!") }
             return
         }
-        if (state.isUsernameAvailable != true) {
-            _uiState.update { it.copy(errorMessage = "Pilih username yang tersedia terlebih dahulu!") }
-            return
-        }
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
