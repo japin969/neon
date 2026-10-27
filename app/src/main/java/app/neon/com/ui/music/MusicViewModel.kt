@@ -102,10 +102,11 @@ class MusicViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            musicRepository.getPopularSongs().collect { result ->
-                result.onSuccess { list ->
-                    _uiState.update { it.copy(recommendedSongs = list) }
-                }
+            try {
+                val list = musicRepository.getPopularSongs()
+                _uiState.update { it.copy(recommendedSongs = list) }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -159,15 +160,11 @@ class MusicViewModel @Inject constructor(
             _uiState.update { it.copy(isSearching = true) }
             delay(400) // Debounce typing
 
-            musicRepository.searchSongsUnified(query).collect { result ->
-                result.fold(
-                    onSuccess = { songs ->
-                        _uiState.update { it.copy(searchResults = songs, isSearching = false) }
-                    },
-                    onFailure = { error ->
-                        _uiState.update { it.copy(isSearching = false, errorMessage = error.localizedMessage) }
-                    }
-                )
+            try {
+                val songs = musicRepository.searchSongsUnified(query)
+                _uiState.update { it.copy(searchResults = songs, isSearching = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isSearching = false, errorMessage = e.localizedMessage) }
             }
         }
     }
