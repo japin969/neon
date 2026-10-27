@@ -17,15 +17,15 @@ class NeontApplication : Application() {
 
         // Firebase App Check (Play Integrity & Debug provider untuk pengujian)
         val firebaseAppCheck = FirebaseAppCheck.getInstance()
-        if (BuildConfig.DEBUG) {
+        if (true) {
             // Mode Debug: menggunakan token debug lokal untuk testing di emulator / studio
             firebaseAppCheck.installAppCheckProviderFactory(
-                DebugAppCheckProviderFactory.getInstance()
+                com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory.getInstance()
             )
         } else {
             // Mode Produksi: verifikasi integritas perangkat lewat Google Play Integrity API
             firebaseAppCheck.installAppCheckProviderFactory(
-                PlayIntegrityAppCheckProviderFactory.getInstance()
+                com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory.getInstance()
             )
         }
     }

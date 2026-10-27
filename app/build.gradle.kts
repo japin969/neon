@@ -84,6 +84,8 @@ dependencies {
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.firebase:firebase-analytics-ktx")
     implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-appcheck-debug:18.0.0")
+    implementation("com.google.firebase:firebase-appcheck-playintegrity:18.0.0")
 
     // Hilt
     implementation("com.google.dagger:hilt-android:2.52")

@@ -174,7 +174,7 @@ class AuthRepository @Inject constructor(
     }
 
     private fun kotlinx.coroutines.CoroutineScope.launchSilently(block: suspend () -> Unit) {
-        kotlinx.coroutines.launch {
+        kotlinx.coroutines.GlobalScope.launch {
             try { block() } catch (_: Exception) {}
         }
     }
