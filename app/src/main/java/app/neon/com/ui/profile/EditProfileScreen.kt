@@ -335,8 +335,7 @@ fun EditProfileScreen(
                             uid = user?.uid ?: "",
                             newDisplay = displayName,
                             newUsername = username
-                        )
-                        onNavigateBack()
+                        ) { onNavigateBack() }
                     },
                     enabled = !state.isLoading,
                     modifier = Modifier

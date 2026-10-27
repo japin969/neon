@@ -3,7 +3,9 @@ package app.neon.com.data.repository
 import app.neon.com.data.local.FileDatabaseManager
 import app.neon.com.data.model.LeaderboardEntry
 import app.neon.com.data.model.User
-import app.neon.com.data.model.UserStory
+import app.neon.com.data.model.VideoPost
+import app.neon.com.data.model.User
+import app.neon.com.data.model.VideoPostStory
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -459,5 +461,25 @@ class SocialRepository @Inject constructor(
         } catch (e: Exception) {
             emit(Result.failure(e))
         }
+    }
+
+    // --- FITUR VIDEO FEED ---
+    fun getUserVideos(userId: String): Flow<List<VideoPost>> = callbackFlow {
+        val ref = firebaseDatabase.getReference("videos").orderByChild("userId").equalTo(userId)
+        
+        val listener = object : com.google.firebase.database.ValueEventListener {
+            override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                val posts = mutableListOf<VideoPost>()
+                for (child in snapshot.children) {
+                    val post = child.getValue(VideoPost::class.java)
+                    if (post != null) posts.add(post)
+                }
+                trySend(posts.sortedByDescending { it.timestamp })
+            }
+            override fun onCancelled(error: com.google.firebase.database.DatabaseError) {}
+        }
+        
+        ref.addValueEventListener(listener)
+        awaitClose { ref.removeEventListener(listener) }
     }
 }

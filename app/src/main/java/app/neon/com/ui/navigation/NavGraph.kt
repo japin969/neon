@@ -45,7 +45,9 @@ import app.neon.com.ui.group.CreateGroupScreen
 import app.neon.com.ui.group.GroupInfoScreen
 import app.neon.com.ui.group.GroupViewModel
 import app.neon.com.ui.main.MainScreen
+import app.neon.com.ui.video.VideoPlayerScreen
 import app.neon.com.ui.music.MusicPlayerScreen
+import app.neon.com.ui.video.VideoPlayerScreen
 import app.neon.com.ui.music.MusicViewModel
 import app.neon.com.ui.profile.DevicesSettingsScreen
 import app.neon.com.ui.profile.EditProfileScreen
@@ -106,6 +108,10 @@ sealed class Screen(val route: String) {
     object StorageSettings : Screen("storage_settings")
     object DevicesSettings : Screen("devices_settings")
     object MusicPlayer : Screen("music_player")
+    object VideoPlayer : Screen("video_player/{userId}/{initialIndex}") {
+        fun createRoute(userId: String, initialIndex: Int = 0): String =
+            "video_player/$userId/$initialIndex"
+    }
 }
 
 sealed class BottomNavItem(
@@ -548,6 +554,28 @@ fun NeontNavGraph(
         }
 
         // 16. Spotify-Style Music Player Fullscreen (TAHAP 7)
+        composable(
+            route = Screen.VideoPlayer.route,
+            arguments = listOf(
+                androidx.navigation.navArgument("userId") { type = androidx.navigation.NavType.StringType },
+                androidx.navigation.navArgument("initialIndex") { type = androidx.navigation.NavType.IntType; defaultValue = 0 }
+            )
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            val initialIndex = backStackEntry.arguments?.getInt("initialIndex") ?: 0
+            val profileViewModel: app.neon.com.ui.profile.ProfileViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+            val state by profileViewModel.uiState.collectAsState()
+            
+            LaunchedEffect(userId) {
+                profileViewModel.loadUserVideos(userId)
+            }
+            
+            VideoPlayerScreen(
+                videos = state.userVideos,
+                initialIndex = initialIndex,
+                onBackClick = { navController.popBackStack() }
+            )
+        }
         composable(Screen.MusicPlayer.route) {
             val musicViewModel: MusicViewModel = hiltViewModel()
             MusicPlayerScreen(

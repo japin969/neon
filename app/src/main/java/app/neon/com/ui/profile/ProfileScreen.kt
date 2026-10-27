@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun ProfileScreen(
+    onVideoClick: (String) -> Unit = {},
     viewModel: ProfileViewModel,
     onNavigateToStory: (userId: String) -> Unit,
     onNavigateToFollowers: (userId: String, type: String) -> Unit,
@@ -281,6 +282,76 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = "Edit Profil", color = Color.White, fontWeight = FontWeight.Bold)
                     }
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // GRID VIDEO (TIKTOK STYLE)
+                if (state.userVideos.isEmpty()) {
+                    // Empty State: Tambahkan Postingan
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                            .clickable {
+                                // TODO: Buka Galeri/Kamera
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Tambahkan Postingan",
+                            tint = Color.White,
+                            modifier = Modifier.size(64.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Tambahkan Postingan",
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Video yang kamu upload akan muncul di sini",
+                            color = Color.Gray,
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    // Grid Video (3 Kolom)
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        modifier = Modifier.fillMaxWidth().height(400.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        items(state.userVideos) { video ->
+                            Box(
+                                modifier = Modifier
+                                    .aspectRatio(9f / 16f)
+                                    .background(Color.DarkGray)
+                                    .clickable { onVideoClick(video.postId) },
+                                contentAlignment = Alignment.BottomStart
+                            ) {
+                                AsyncImage(
+                                    model = video.thumbnailUrl,
+                                    contentDescription = video.caption,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                                // Overlay Play Icon & Views
+                                Row(
+                                    modifier = Modifier.padding(4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.PlayArrow, "Play", tint = Color.White, modifier = Modifier.size(16.dp))
+                                    Text("${video.likesCount}", color = Color.White, fontSize = 10.sp)
+                                }
+                            }
+                        }
+                    }
+                }
+
 
                     Button(
                         onClick = { viewModel.openCreateStoryDialog() },

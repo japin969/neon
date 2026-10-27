@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class ProfileUiState(
+    val userVideos: List<app.neon.com.data.model.VideoPost> = emptyList(),
     val currentUser: User? = null,
     val stories: List<UserStory> = emptyList(),
     val hasActiveStory: Boolean = false,
@@ -111,45 +112,7 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun updateProfile(
-        displayName: String,
-        bio: String,
-        avatarColorHex: String,
-        avatarUrl: String = "",
-        onSuccess: () -> Unit
-    ) {
-        val user = _uiState.value.currentUser ?: return
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            val flow = if (avatarUrl.isNotBlank()) {
-                socialRepository.updateProfileWithAvatar(user.uid, displayName, bio, avatarColorHex, avatarUrl)
-            } else {
-                socialRepository.updateProfile(user.uid, displayName, bio, avatarColorHex)
-            }
 
-            flow.collect { result ->
-                _uiState.update { it.copy(isLoading = false) }
-                result.fold(
-                    onSuccess = {
-                        _uiState.update { current ->
-                            current.copy(
-                                currentUser = current.currentUser?.copy(
-                                    displayName = displayName.trim(),
-                                    bio = bio.trim(),
-                                    avatarColorHex = avatarColorHex,
-                                    avatarUrl = if (avatarUrl.isNotBlank()) avatarUrl.trim() else current.currentUser.avatarUrl
-                                )
-                            )
-                        }
-                        onSuccess()
-                    },
-                    onFailure = { error ->
-                        _uiState.update { it.copy(errorMessage = error.localizedMessage) }
-                    }
-                )
-            }
-        }
-    }
 
     fun togglePrivacyLastSeen() {
         val user = _uiState.value.currentUser ?: return
@@ -223,6 +186,43 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             authRepository.signOut()
             onLoggedOut()
+        }
+    }
+
+    fun canChangeUsername(user: User): Boolean = authRepository.canChangeUsername(user)
+    fun canChangeDisplayName(user: User): Boolean = authRepository.canChangeDisplayName(user)
+    fun getRemainingDays(lastChange: Long, cooldownDays: Int): Int = authRepository.getRemainingDays(lastChange, cooldownDays)
+    fun updateProfile(
+        uid: String, 
+        newDisplay: String, 
+        newUsername: String, 
+        bio: String = "", 
+        avatarColorHex: String = "#00FF66", 
+        avatarUrl: String = "", 
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+            val current = _uiState.value.currentUser
+            if (current != null) {
+                if (newDisplay != current.displayName && authRepository.canChangeDisplayName(current)) {
+                    authRepository.updateDisplayName(uid, newDisplay)
+                }
+                if (newUsername != current.username && authRepository.canChangeUsername(current)) {
+                    authRepository.updateUsername(uid, newUsername)
+                }
+                if (bio != current.bio || avatarColorHex != current.avatarColorHex || avatarUrl != current.avatarUrl) {
+                    socialRepository.updateProfile(uid, newDisplay, bio, avatarColorHex)
+                }
+                onSuccess()
+            }
+        }
+    }
+
+    fun loadUserVideos(userId: String) {
+        viewModelScope.launch {
+            socialRepository.getUserVideos(userId).collect { videos ->
+                _uiState.update { it.copy(userVideos = videos) }
+            }
         }
     }
 }
