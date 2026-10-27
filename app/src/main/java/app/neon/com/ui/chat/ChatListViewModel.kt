@@ -69,7 +69,9 @@ class ChatListViewModel @Inject constructor(
     private fun observeChats(uid: String) {
         chatObserverJob?.cancel()
         chatObserverJob = viewModelScope.launch {
-            chatRepository.observeUserChats(uid).collect { chats ->
+            chatRepository.observeUserChats(uid).catch { e ->
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage) }
+            }.collect { chats ->
                 _uiState.update { current ->
                     val query = current.searchQuery.trim().lowercase()
                     val filtered = if (query.isNotBlank()) {

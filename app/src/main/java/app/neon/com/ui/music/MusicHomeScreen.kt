@@ -1,11 +1,14 @@
-package app.neon.com.ui.music
+package app.neon.com.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,549 +18,709 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.neon.com.data.model.Song
 import coil.compose.AsyncImage
+import coil.request.CachePolicy
+import coil.request.ImageRequest
+import app.neon.com.data.model.Song
+import app.neon.com.data.repository.MusicRepository
+import app.neon.com.ui.theme.IosBlue
+import app.neon.com.ui.theme.LocalIosColors
+import app.neon.com.ui.theme.LocalIosTypography
+import kotlinx.coroutines.launch
+
+/**
+ * Modifier Tombol Bouncy iOS Ringan (Zero-Lag)
+ */
+@Composable
+fun Modifier.iosBouncyClickable(
+    enabled: Boolean = true,
+    onClick: () -> Unit
+): Modifier {
+    var isPressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "iOSBouncy"
+    )
+
+    return this
+        .scale(scale)
+        .pointerInput(enabled) {
+            if (enabled) {
+                detectTapGestures(
+                    onPress = {
+                        isPressed = true
+                        tryAwaitRelease()
+                        isPressed = false
+                        onClick()
+                    }
+                )
+            }
+        }
+}
 
 @Composable
 fun MusicHomeScreen(
-    viewModel: MusicViewModel,
-    onOpenMusicPlayer: () -> Unit
+    repository: MusicRepository = remember { MusicRepository() },
+    currentUserId: String = "user_neont_guest"
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val colors = LocalIosColors.current
+    val typography = LocalIosTypography.current
+    val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
 
-    val darkBg = Color(0xFF0D0E15)
-    val darkCard = Color(0xFF161824)
-    val neonGreen = Color(0xFF00FF66)
-    val neonCyan = Color(0xFF00E5FF)
-    val neonPink = Color(0xFFFF007F)
+    var searchQuery by remember { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf<List<Song>>(emptyList()) }
+    var popularSongs by remember { mutableStateOf<List<Song>>(emptyList()) }
+    var recentlyPlayedSongs by remember { mutableStateOf<List<Song>>(emptyList()) }
+    var isSearching by remember { mutableStateOf(false) }
+    var currentPlayingSong by remember { mutableStateOf<Song?>(null) }
+    var isPlaying by remember { mutableStateOf(false) }
+    var playbackProgress by remember { mutableFloatStateOf(0.40f) }
+
+    // OPTIMASI: derivedStateOf untuk tombol Scroll to Top agar tidak rekomposisi berlebihan
+    val showScrollToTop by remember {
+        derivedStateOf { listState.firstVisibleItemIndex > 3 }
+    }
+
+    // Fungsi putar lagu + Catat ke Firebase playCount & recentlyPlayed
+    val playSongAction: (Song) -> Unit = remember {
+        { song ->
+            currentPlayingSong = song
+            isPlaying = true
+            scope.launch {
+                // Catat ke Firebase di background (ExoPlayer mulai)
+                repository.recordSongPlay(song, currentUserId)
+                // Refresh daftar sering diputar
+                recentlyPlayedSongs = repository.getRecentlyPlayed(currentUserId)
+            }
+        }
+    }
+
+    // Load data Populer dan Sering Diputar saat layar pertama kali dibuka
+    LaunchedEffect(Unit) {
+        scope.launch {
+            popularSongs = repository.getPopularSongs()
+        }
+        scope.launch {
+            recentlyPlayedSongs = repository.getRecentlyPlayed(currentUserId)
+        }
+    }
+
+    // Pencarian 4 API Paralel (di belakang layar tanpa teks sumber)
+    fun performSearch(query: String) {
+        if (query.trim().isEmpty()) {
+            searchResults = emptyList()
+            return
+        }
+        isSearching = true
+        scope.launch {
+            val results = repository.searchSongsUnified(query)
+            searchResults = results
+            isSearching = false
+        }
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(darkBg)
+            .background(colors.background)
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Header: Greeting & Profile
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
+            // ==========================================
+            // 🍎 1. Header Resmi: "Neont Music" (20sp Title)
+            // ==========================================
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = state.greeting,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.White
-                    )
-                    Text(
-                        text = "Temukan musik favoritmu di Neont",
-                        fontSize = 12.sp,
-                        color = Color(0xFF888EA8)
-                    )
-                }
-
-                // Avatar Icon
-                val avatarColor = try {
-                    Color(android.graphics.Color.parseColor(state.currentUser?.avatarColorHex ?: "#00FF66"))
-                } catch (_: Exception) {
-                    neonGreen
-                }
+                Text(
+                    text = "Neont Music",
+                    style = typography.title3,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.textPrimary
+                )
 
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
-                        .background(avatarColor),
+                        .background(colors.surface)
+                        .iosBouncyClickable { },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = state.currentUser?.getInitials() ?: "NE",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.Black
-                    )
+                    Text(text = "🎵", fontSize = 18.sp)
                 }
             }
 
-            // Search Bar
+            // ==========================================
+            // 🔍 2. Search Bar: "cari lagu anda"
+            // ==========================================
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 6.dp)
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
             ) {
-                OutlinedTextField(
-                    value = state.searchQuery,
-                    onValueChange = { viewModel.onSearchQueryChanged(it) },
-                    placeholder = { Text("Cari lagu, artis, atau album...", color = Color(0xFF6B7280)) },
+                TextField(
+                    value = searchQuery,
+                    onValueChange = {
+                        searchQuery = it
+                        if (it.length >= 2) {
+                            performSearch(it)
+                        } else if (it.isEmpty()) {
+                            searchResults = emptyList()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                        .shadow(elevation = 2.dp, shape = RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(12.dp)),
+                    placeholder = {
+                        Text(
+                            text = "cari lagu anda",
+                            style = typography.callout,
+                            fontSize = 16.sp,
+                            color = colors.textSecondary
+                        )
+                    },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = neonGreen
+                            contentDescription = "Cari",
+                            tint = colors.textSecondary,
+                            modifier = Modifier.size(20.dp)
                         )
                     },
                     trailingIcon = {
-                        if (state.searchQuery.isNotBlank()) {
-                            IconButton(onClick = { viewModel.clearSearch() }) {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = {
+                                searchQuery = ""
+                                searchResults = emptyList()
+                            }) {
                                 Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Clear",
-                                    tint = Color.White
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Hapus",
+                                    tint = colors.textSecondary,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
                     },
                     singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = neonGreen,
-                        unfocusedBorderColor = Color(0xFF262A3E),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = neonGreen
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth().height(52.dp)
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = colors.surface,
+                        unfocusedContainerColor = colors.surface,
+                        disabledContainerColor = colors.surface,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedTextColor = colors.textPrimary,
+                        unfocusedTextColor = colors.textPrimary
+                    )
                 )
             }
 
-            // Content: Search Results vs Home Showcase
-            if (state.isSearchActive) {
-                // Search Results View
-                if (state.isSearching) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = neonGreen)
-                    }
-                } else if (state.searchResults.isEmpty()) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            // Indikator loading pencarian
+            if (isSearching) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(14.dp),
+                        color = IosBlue,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Memuat lagu...",
+                        style = typography.footnote,
+                        color = colors.textSecondary
+                    )
+                }
+            }
+
+            // ==========================================
+            // 🎶 3. Konten Utama: LazyColumn dengan unique key (Anti-Lag)
+            // ==========================================
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentPadding = PaddingValues(bottom = 120.dp)
+            ) {
+                // KONDISI A: Menampilkan Hasil Pencarian
+                if (searchQuery.isNotEmpty() && searchResults.isNotEmpty()) {
+                    item(key = "header_search_results") {
                         Text(
-                            text = "Lagu tidak ditemukan untuk '${state.searchQuery}'",
-                            color = Color(0xFF888EA8),
-                            fontSize = 14.sp
+                            text = "Hasil Pencarian",
+                            style = typography.title3,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = colors.textPrimary,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
                         )
+                    }
+
+                    items(
+                        items = searchResults,
+                        key = { it.id } // OPTIMASI: Key Unik
+                    ) { song ->
+                        val isCurrent = currentPlayingSong?.id == song.id
+                        CleanSongListItem(
+                            song = song,
+                            isCurrent = isCurrent,
+                            isPlaying = isCurrent && isPlaying,
+                            onSongClick = { playSongAction(song) }
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 20.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(state.searchResults, key = { "search_${it.id}" }) { song ->
-                            SongRowItem(
-                                song = song,
-                                isPlaying = state.currentSong?.id == song.id && state.isPlaying,
-                                isLoved = state.lovedSongIds.contains(song.id),
-                                onPlay = {
-                                    viewModel.playSong(song, state.searchResults)
-                                    onOpenMusicPlayer()
-                                },
-                                onToggleLove = { viewModel.toggleLoveSong(song) }
-                            )
-                        }
-                    }
-                }
-            } else {
-                // Standard Spotify Home Layout
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(bottom = 80.dp)
-                ) {
-                    // 1. Section: Trending Now (LazyRow Cards)
-                    item {
-                        Text(
-                            text = "TRENDING NOW",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp,
-                            color = neonCyan,
-                            modifier = Modifier.padding(start = 20.dp, top = 16.dp, bottom = 12.dp)
-                        )
+                    // KONDISI B: Menampilkan "Sering Diputar" & "Populer"
 
-                        if (state.isLoadingTrending) {
-                            Box(
+                    // SECTION 1: SERING DIPUTAR (DATA ASLI FIREBASE)
+                    if (recentlyPlayedSongs.isNotEmpty()) {
+                        item(key = "section_recent_header") {
+                            Column(modifier = Modifier.padding(top = 10.dp)) {
+                                Text(
+                                    text = "Sering Diputar",
+                                    style = typography.title3,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.textPrimary,
+                                    modifier = Modifier.padding(horizontal = 20.dp)
+                                )
+                                Text(
+                                    text = "Baru-baru ini diputar",
+                                    style = typography.footnote,
+                                    color = colors.textSecondary,
+                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                        item(key = "section_recent_horizontal_list") {
+                            LazyRow(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(180.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(color = neonCyan)
-                            }
-                        } else {
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = 20.dp),
+                                    .padding(vertical = 10.dp),
+                                contentPadding = PaddingValues(horizontal = 16.dp),
                                 horizontalArrangement = Arrangement.spacedBy(14.dp)
                             ) {
-                                items(state.trendingSongs, key = { "trending_${it.id}" }) { song ->
-                                    TrendingSongCard(
+                                items(
+                                    items = recentlyPlayedSongs,
+                                    key = { "recent_${it.id}" } // OPTIMASI: Key Unik
+                                ) { song ->
+                                    CleanSongCard(
                                         song = song,
-                                        isPlaying = state.currentSong?.id == song.id && state.isPlaying,
-                                        onClick = {
-                                            viewModel.playSong(song, state.trendingSongs)
-                                            onOpenMusicPlayer()
-                                        }
+                                        onSongClick = { playSongAction(song) }
                                     )
                                 }
                             }
                         }
                     }
 
-                    // 2. Section: Rekomendasi Untukmu (LazyColumn)
-                    item {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "REKOMENDASI UNTUKMU",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp,
-                            color = neonGreen,
-                            modifier = Modifier.padding(start = 20.dp, bottom = 12.dp)
-                        )
-                    }
-
-                    items(state.recommendedSongs, key = { "rec_${it.id}" }) { song ->
-                        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
-                            SongRowItem(
-                                song = song,
-                                isPlaying = state.currentSong?.id == song.id && state.isPlaying,
-                                isLoved = state.lovedSongIds.contains(song.id),
-                                onPlay = {
-                                    viewModel.playSong(song, state.recommendedSongs)
-                                    onOpenMusicPlayer()
-                                },
-                                onToggleLove = { viewModel.toggleLoveSong(song) }
+                    // SECTION 2: POPULER (TERPOPULER BELAKANGAN INI)
+                    item(key = "section_popular_header") {
+                        Column(modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)) {
+                            Text(
+                                text = "Populer",
+                                style = typography.title3,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = colors.textPrimary,
+                                modifier = Modifier.padding(horizontal = 20.dp)
+                            )
+                            Text(
+                                text = "Lagu terpopuler belakangan ini",
+                                style = typography.footnote,
+                                color = colors.textSecondary,
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)
                             )
                         }
                     }
+
+                    items(
+                        items = popularSongs,
+                        key = { "pop_${it.id}" } // OPTIMASI: Key Unik
+                    ) { song ->
+                        val isCurrent = currentPlayingSong?.id == song.id
+                        CleanSongListItem(
+                            song = song,
+                            isCurrent = isCurrent,
+                            isPlaying = isCurrent && isPlaying,
+                            onSongClick = { playSongAction(song) }
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
                 }
             }
+        }
 
-            // Mini Player Bar (Persistent at bottom when playing)
-            AnimatedVisibility(
-                visible = state.currentSong != null,
-                enter = fadeIn(),
-                exit = fadeOut()
+        // ==========================================
+        // ⬆️ Tombol Scroll to Top (Smooth & Ringan)
+        // ==========================================
+        AnimatedVisibility(
+            visible = showScrollToTop,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 90.dp, end = 20.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .shadow(4.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(colors.surface)
+                    .iosBouncyClickable {
+                        scope.launch { listState.animateScrollToItem(0) }
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                state.currentSong?.let { song ->
-                    MiniPlayerBar(
-                        song = song,
-                        isPlaying = state.isPlaying,
-                        isLoved = state.isCurrentSongLoved,
-                        onBarClick = onOpenMusicPlayer,
-                        onTogglePlayPause = { viewModel.togglePlayPause() },
-                        onToggleLove = { viewModel.toggleLoveCurrentSong() }
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowUp,
+                    contentDescription = "Scroll to Top",
+                    tint = colors.textPrimary,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+
+        // ==========================================
+        // 🪟 Mini Player iOS Bersih di Bawah
+        // ==========================================
+        if (currentPlayingSong != null) {
+            currentPlayingSong?.let { song ->
+                CleanIosMiniPlayer(
+                    song = song,
+                    isPlaying = isPlaying,
+                    progress = playbackProgress,
+                    onPlayPauseToggle = { isPlaying = !isPlaying },
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
+        }
+    }
+}
+
+// ==========================================
+// 🎨 KOMPONEN ITEM LIST BERSIH TANPA BADGE API
+// ==========================================
+
+@Composable
+fun CleanSongListItem(
+    song: Song,
+    isCurrent: Boolean,
+    isPlaying: Boolean,
+    onSongClick: () -> Unit
+) {
+    val colors = LocalIosColors.current
+    val typography = LocalIosTypography.current
+    val context = LocalContext.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .shadow(elevation = 1.dp, shape = RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (isCurrent) colors.card else colors.surface)
+            .clickable(onClick = onSongClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Coil Image Loader dengan Cache Memory & Crossfade
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(song.albumCoverUrl)
+                .crossfade(true)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .build(),
+            contentDescription = song.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .size(52.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(colors.card)
+        )
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        // Hanya Judul & Artis (Tanpa Teks Sumber API)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = song.title,
+                style = typography.body,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isCurrent) IosBlue else colors.textPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = song.artist,
+                style = typography.subheadline,
+                fontSize = 14.sp,
+                color = colors.textSecondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Spacer(modifier = Modifier.width(10.dp))
+
+        // Durasi & Tombol Play
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = song.duration,
+                style = typography.caption1,
+                color = colors.textSecondary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(CircleShape)
+                    .background(if (isCurrent) IosBlue else colors.surface)
+                    .iosBouncyClickable(onClick = onSongClick),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isCurrent && isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = "Play",
+                    tint = if (isCurrent) Color.White else colors.textPrimary,
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun TrendingSongCard(
+fun CleanSongCard(
     song: Song,
-    isPlaying: Boolean,
-    onClick: () -> Unit
+    onSongClick: () -> Unit
 ) {
-    val darkCard = Color(0xFF161824)
-    val neonGreen = Color(0xFF00FF66)
+    val colors = LocalIosColors.current
+    val typography = LocalIosTypography.current
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
-            .width(150.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(darkCard)
-            .border(
-                1.dp,
-                if (isPlaying) neonGreen else Color(0xFF262A3E),
-                RoundedCornerShape(16.dp)
-            )
-            .clickable(onClick = onClick)
-            .padding(12.dp)
+            .width(135.dp)
+            .shadow(elevation = 2.dp, shape = RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(14.dp))
+            .background(colors.surface)
+            .clickable(onClick = onSongClick)
+            .padding(8.dp)
     ) {
-        Box(
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(song.albumCoverUrl)
+                .crossfade(true)
+                .memoryCachePolicy(CachePolicy.ENABLED)
+                .build(),
+            contentDescription = song.title,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
-                .size(126.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF222638)),
-            contentAlignment = Alignment.Center
-        ) {
-            if (song.coverUrl.isNotBlank()) {
-                AsyncImage(
-                    model = song.coverUrl,
-                    contentDescription = song.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
-                    contentDescription = null,
-                    tint = neonGreen,
-                    modifier = Modifier.size(48.dp)
-                )
-            }
+                .size(119.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(colors.card)
+        )
 
-            if (isPlaying) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.45f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Pause,
-                        contentDescription = null,
-                        tint = neonGreen,
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = song.title,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (isPlaying) neonGreen else Color.White,
+            style = typography.body,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = colors.textPrimary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-
         Text(
             text = song.artist,
-            fontSize = 11.sp,
-            color = Color(0xFF888EA8),
+            style = typography.footnote,
+            fontSize = 12.sp,
+            color = colors.textSecondary,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 2.dp)
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
 
 @Composable
-private fun SongRowItem(
+fun CleanIosMiniPlayer(
     song: Song,
     isPlaying: Boolean,
-    isLoved: Boolean,
-    onPlay: () -> Unit,
-    onToggleLove: () -> Unit
+    progress: Float,
+    onPlayPauseToggle: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val darkCard = Color(0xFF161824)
-    val neonGreen = Color(0xFF00FF66)
-    val neonPink = Color(0xFFFF007F)
+    val colors = LocalIosColors.current
+    val typography = LocalIosTypography.current
+    val context = LocalContext.current
 
-    Row(
-        modifier = Modifier
+    Column(
+        modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(darkCard)
-            .border(
-                1.dp,
-                if (isPlaying) neonGreen else Color(0xFF262A3E),
-                RoundedCornerShape(14.dp)
-            )
-            .clickable(onClick = onPlay)
-            .padding(10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(50.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF222638)),
-            contentAlignment = Alignment.Center
-        ) {
-            if (song.coverUrl.isNotBlank()) {
-                AsyncImage(
-                    model = song.coverUrl,
-                    contentDescription = song.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
-                    contentDescription = null,
-                    tint = neonGreen,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            if (isPlaying) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.4f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Pause,
-                        contentDescription = null,
-                        tint = neonGreen,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = song.title,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isPlaying) neonGreen else Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = "${song.artist} • ${song.album}",
-                fontSize = 12.sp,
-                color = Color(0xFF888EA8),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-
-        IconButton(onClick = onToggleLove) {
-            Icon(
-                imageVector = if (isLoved) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                contentDescription = "Love",
-                tint = if (isLoved) neonPink else Color(0xFF7E849B)
-            )
-        }
-    }
-}
-
-@Composable
-private fun MiniPlayerBar(
-    song: Song,
-    isPlaying: Boolean,
-    isLoved: Boolean,
-    onBarClick: () -> Unit,
-    onTogglePlayPause: () -> Unit,
-    onToggleLove: () -> Unit
-) {
-    val neonGreen = Color(0xFF00FF66)
-    val neonPink = Color(0xFFFF007F)
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .navigationBarsPadding()
+            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .shadow(12.dp, RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
-            .background(
-                Brush.horizontalGradient(
-                    listOf(Color(0xFF1A2136), Color(0xFF141726))
-                )
-            )
-            .border(1.dp, neonGreen.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-            .clickable(onClick = onBarClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .background(colors.card)
     ) {
+        // Garis Progress Mini Player
         Box(
             modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF282D42)),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(colors.separator)
         ) {
-            if (song.coverUrl.isNotBlank()) {
-                AsyncImage(
-                    model = song.coverUrl,
-                    contentDescription = song.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Icon(imageVector = Icons.Default.MusicNote, contentDescription = null, tint = neonGreen)
-            }
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = song.title,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = song.artist,
-                fontSize = 11.sp,
-                color = Color(0xFF888EA8),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress)
+                    .height(2.dp)
+                    .background(IosBlue)
             )
         }
 
-        IconButton(onClick = onToggleLove, modifier = Modifier.size(36.dp)) {
-            Icon(
-                imageVector = if (isLoved) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                contentDescription = null,
-                tint = if (isLoved) neonPink else Color(0xFF888EA8),
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
-        IconButton(
-            onClick = onTogglePlayPause,
+        Row(
             modifier = Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .background(neonGreen)
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = null,
-                tint = Color.Black,
-                modifier = Modifier.size(22.dp)
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(song.albumCoverUrl)
+                    .crossfade(true)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .build(),
+                contentDescription = song.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(colors.surface)
             )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = song.title,
+                    style = typography.body,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = colors.textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = song.artist,
+                    style = typography.caption1,
+                    color = colors.textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(IosBlue)
+                    .iosBouncyClickable(onClick = onPlayPauseToggle),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = "Toggle",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            IconButton(
+                onClick = { },
+                modifier = Modifier.size(34.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.SkipNext,
+                    contentDescription = "Berikutnya",
+                    tint = colors.textPrimary,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
         }
     }
 }

@@ -36,7 +36,9 @@ class LeaderboardViewModel @Inject constructor(
 
     fun loadLeaderboard() {
         viewModelScope.launch {
-            socialRepository.observeLeaderboard().collect { entries ->
+            socialRepository.observeLeaderboard().catch { e ->
+                _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage) }
+            }.collect { entries ->
                 val top1 = entries.getOrNull(0)
                 val top2 = entries.getOrNull(1)
                 val top3 = entries.getOrNull(2)

@@ -1,32 +1,21 @@
 package app.neon.com
 
 import android.app.Application
-import com.google.firebase.FirebaseApp
-import com.google.firebase.appcheck.FirebaseAppCheck
-import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
-import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory
-import dagger.hilt.android.HiltAndroidApp
+import com.vanniktech.emoji.EmojiManager
+import com.vanniktech.emoji.ios.IosEmojiProvider
 
-@HiltAndroidApp
+/**
+ * NeontApplication - Inisialisasi tingkat aplikasi
+ * Mengonfigurasi Emoji iOS (Vanniktech IosEmojiProvider) agar seluruh emoji di aplikasi
+ * menggunakan grafis otentik Apple iPhone.
+ */
 class NeontApplication : Application() {
+
     override fun onCreate() {
         super.onCreate()
-        
-        // Inisialisasi Firebase Core
-        FirebaseApp.initializeApp(this)
 
-        // Firebase App Check (Play Integrity & Debug provider untuk pengujian)
-        val firebaseAppCheck = FirebaseAppCheck.getInstance()
-        if (true) {
-            // Mode Debug: menggunakan token debug lokal untuk testing di emulator / studio
-            firebaseAppCheck.installAppCheckProviderFactory(
-                com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory.getInstance()
-            )
-        } else {
-            // Mode Produksi: verifikasi integritas perangkat lewat Google Play Integrity API
-            firebaseAppCheck.installAppCheckProviderFactory(
-                com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory.getInstance()
-            )
-        }
+        // Inisialisasi Vanniktech iOS Emoji Provider
+        // Mengganti semua font emoji Android default menjadi Apple iOS Style
+        EmojiManager.install(IosEmojiProvider())
     }
 }
