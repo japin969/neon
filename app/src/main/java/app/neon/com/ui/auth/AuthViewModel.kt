@@ -252,6 +252,7 @@ class AuthViewModel @Inject constructor(
                         }
                     }
                 )
+            }
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
             }
