@@ -390,7 +390,7 @@ class SocialRepository @Inject constructor(
                         stories.add(story)
                     }
                 }
-                trySend(stories.sortedBy { it.timestamp })
+                trySend(stories.sortedBy { it.timestamp } as List<UserStory>)
             }
 
             override fun onCancelled(error: DatabaseError) {

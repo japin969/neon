@@ -1,5 +1,6 @@
 package app.neon.com.ui.profile
 
+import androidx.compose.foundation.layout.aspectRatio
 import coil.compose.AsyncImage
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.ui.layout.ContentScale
