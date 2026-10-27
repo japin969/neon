@@ -46,7 +46,7 @@ class StoryViewerViewModel @Inject constructor(
                         isLoading = false
                     )
                 }
-                if (list.isNotEmpty()) {
+                if (!list.isNullOrEmpty()) {
                     startStoryProgress()
                 }
             }

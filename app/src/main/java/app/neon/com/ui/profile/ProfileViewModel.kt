@@ -172,7 +172,7 @@ class ProfileViewModel @Inject constructor(
                 result.fold(
                     onSuccess = { story ->
                         closeCreateStoryDialog()
-                        onSuccess(story.id)
+                        onSuccess(story.storyId)
                     },
                     onFailure = { error ->
                         _uiState.update { it.copy(errorMessage = error.localizedMessage) }
