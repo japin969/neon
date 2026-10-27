@@ -1,0 +1,100 @@
+{
+  "rules": {
+    "users": {
+      ".read": "auth != null",
+      ".indexOn": ["username"],
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid && !root.child('banned').child(auth.uid).exists()",
+        ".validate": "newData.hasChildren(['username', 'email'])",
+        "username": {
+          ".validate": "newData.isString() && newData.val().length >= 3 && newData.val().length <= 30"
+        },
+        "email": {
+          ".validate": "newData.isString()"
+        },
+        "likesCount": {
+          ".validate": "newData.isNumber()"
+        },
+        "followersCount": {
+          ".validate": "newData.isNumber()"
+        },
+        "followingCount": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "usernames": {
+      ".read": true,
+      "$username": {
+        ".write": "auth != null && !root.child('banned').child(auth.uid).exists() && (!data.exists() || data.val() === auth.uid || !newData.exists())",
+        ".validate": "!newData.exists() || newData.val() === auth.uid"
+      }
+    },
+    "chats": {
+      "$chatId": {
+        ".read": "auth != null && (data.child('participants').child(auth.uid).exists() || (!data.exists() && newData.child('participants').child(auth.uid).exists()))",
+        ".write": "auth != null && !root.child('banned').child(auth.uid).exists() && (data.child('participants').child(auth.uid).exists() || (!data.exists() && newData.child('participants').child(auth.uid).exists()))"
+      }
+    },
+    "messages": {
+      "$chatId": {
+        ".read": "auth != null && root.child('chats').child($chatId).child('participants').child(auth.uid).exists()",
+        "$messageId": {
+          ".write": "auth != null && !root.child('banned').child(auth.uid).exists() && root.child('chats').child($chatId).child('participants').child(auth.uid).exists() && (!data.exists() && newData.child('senderId').val() === auth.uid || data.exists() && (data.child('senderId').val() === auth.uid || newData.child('reactions').exists() || newData.child('deletedForEveryone').val() === true))",
+          ".validate": "newData.hasChildren(['encryptedText', 'senderId', 'timestamp'])"
+        }
+      }
+    },
+    "groups": {
+      "$groupId": {
+        ".read": "auth != null && (data.child('members').child(auth.uid).exists() || (!data.exists() && newData.child('members').child(auth.uid).exists()))",
+        ".write": "auth != null && !root.child('banned').child(auth.uid).exists() && (!data.exists() || data.child('admins').child(auth.uid).exists() || (data.child('members').child(auth.uid).exists() && (newData.child('polls').exists() || newData.child('pinnedMessageId').exists())))"
+      }
+    },
+    "followers": {
+      "$userId": {
+        ".read": "auth != null",
+        "$followerId": {
+          ".write": "auth != null && auth.uid === $followerId && !root.child('banned').child(auth.uid).exists()"
+        }
+      }
+    },
+    "following": {
+      "$userId": {
+        ".read": "auth != null",
+        "$targetUserId": {
+          ".write": "auth != null && auth.uid === $userId && !root.child('banned').child(auth.uid).exists()"
+        }
+      }
+    },
+    "leaderboard": {
+      ".read": true,
+      ".indexOn": ["score", "followersCount", "likesCount"],
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid && !root.child('banned').child(auth.uid).exists()"
+      }
+    },
+    "music": {
+      ".read": true,
+      ".write": "auth != null && !root.child('banned').child(auth.uid).exists()"
+    },
+    "stories": {
+      "$userId": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.uid === $userId && !root.child('banned').child(auth.uid).exists()"
+      }
+    },
+    "signaling": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null && !root.child('banned').child(auth.uid).exists()"
+      }
+    },
+    "banned": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null"
+      }
+    }
+  }
+}
