@@ -10,7 +10,7 @@ import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.tasks.await
 
 
-class AuthRepository(
+class AuthRepoSecure(
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {
 

@@ -3,7 +3,7 @@ package app.neon.com.ui.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
-import app.neon.com.data.repository.AuthRepository
+import app.neon.com.data.repository.AuthRepoSecure
 import app.neon.com.data.repository.AuthResult
 import app.neon.com.util.Utils
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +24,7 @@ data class LoginUiState(
 )
 
 class LoginViewModel(
-    private val authRepository: AuthRepository = AuthRepository()
+    private val authRepoSecure: AuthRepoSecure = AuthRepoSecure()
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -57,7 +57,7 @@ class LoginViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, generalError = null) }
-            when (val result = authRepository.signInWithEmail(current.email, current.password)) {
+            when (val result = authRepoSecure.signInWithEmail(current.email, current.password)) {
                 is AuthResult.Success -> {
                     _uiState.update { it.copy(isLoading = false, loggedInUser = result.data) }
                 }

@@ -3,7 +3,7 @@ package app.neon.com.ui.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
-import app.neon.com.data.repository.AuthRepository
+import app.neon.com.data.repository.AuthRepoSecure
 import app.neon.com.data.repository.AuthResult
 import app.neon.com.util.Utils
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +27,7 @@ data class RegisterUiState(
 )
 
 class RegisterViewModel(
-    private val authRepository: AuthRepository = AuthRepository()
+    private val authRepoSecure: AuthRepoSecure = AuthRepoSecure()
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
@@ -73,14 +73,14 @@ class RegisterViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, generalError = null) }
-            when (val result = authRepository.signUpWithEmail(current.email, current.password)) {
+            when (val result = authRepoSecure.signUpWithEmail(current.email, current.password)) {
                 is AuthResult.Success -> {
                     val firebaseUser = result.data
                     // Bikin username acak otomatis
                     val randomUsername = "user${System.currentTimeMillis() % 100000000}"
                     
-                    // Simpan profil ke database (pakai AuthRepository lama yang punya createUserProfile)
-                    val legacyRepo = app.neon.com.data.repository.AuthRepository()
+                    // Simpan profil ke database (pakai AuthRepoSecure lama yang punya createUserProfile)
+                    val legacyRepo = app.neon.com.data.repository.AuthRepoSecure()
                     legacyRepo.createUserProfile(firebaseUser.uid, current.email, randomUsername).collect { profileResult ->
                         profileResult.fold(
                             onSuccess = { user ->
