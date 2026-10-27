@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Neont</string>
+    <string name="turn_username">placeholder</string>
+    <string name="turn_password">placeholder</string>
+    <string name="turn_urls">placeholder</string>
+</resources>
