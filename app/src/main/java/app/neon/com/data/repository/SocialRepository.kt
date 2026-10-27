@@ -1,12 +1,10 @@
 package app.neon.com.data.repository
 
+import app.neon.com.data.model.User
 import app.neon.com.data.model.UserStory
 import app.neon.com.data.local.FileDatabaseManager
 import app.neon.com.data.model.LeaderboardEntry
-import app.neon.com.data.model.User
 import app.neon.com.data.model.VideoPost
-import app.neon.com.data.model.User
-import app.neon.com.data.model.VideoPostStory
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
