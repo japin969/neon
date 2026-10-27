@@ -356,6 +356,7 @@ fun ChatDetailScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChatDetailTopBar(
     chatName: String,
@@ -451,6 +452,7 @@ private fun ChatDetailTopBar(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PinnedMessageHeader(
     pinnedMessage: ChatMessage,
@@ -498,6 +500,7 @@ private fun PinnedMessageHeader(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SwipeableMessageBubble(
     message: ChatMessage,
@@ -732,6 +735,7 @@ private fun SwipeableMessageBubble(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ReplyOrEditBanner(
     replyMessage: ChatMessage?,
@@ -788,6 +792,7 @@ private fun ReplyOrEditBanner(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChatInputBar(
     text: String,
@@ -847,6 +852,7 @@ private fun ChatInputBar(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun OptionItemRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -868,6 +874,7 @@ private fun OptionItemRow(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ForwardMessageDialog(
     availableChats: List<ChatItem>,

@@ -292,6 +292,7 @@ fun ChatListScreen(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChatListTopBar(
     isSearchActive: Boolean,
@@ -400,6 +401,7 @@ private fun ChatListTopBar(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChatItemRow(
     chat: ChatItem,
@@ -530,6 +532,7 @@ private fun ChatItemRow(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ArchivedFolderBanner(
     count: Int,
@@ -572,6 +575,7 @@ private fun ArchivedFolderBanner(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SectionHeader(title: String, count: Int, tint: Color) {
     Row(
@@ -590,6 +594,7 @@ private fun SectionHeader(title: String, count: Int, tint: Color) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChatListEmptyState(onAddContact: () -> Unit) {
     val neonGreen = Color(0xFF00FF66)
@@ -644,6 +649,7 @@ private fun ChatListEmptyState(onAddContact: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun AddContactDialog(
     searchQuery: String,

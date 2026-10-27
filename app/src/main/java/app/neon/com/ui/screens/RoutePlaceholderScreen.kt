@@ -11,13 +11,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun RoutePlaceholderScreen(title: String, onBack: () -> Unit) {
+fun RoutePlaceholderScreen(
+    name: String,
+    onBack: () -> Unit = {}
+) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(title, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        Text(name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onBack) { Text("Kembali") }
     }
