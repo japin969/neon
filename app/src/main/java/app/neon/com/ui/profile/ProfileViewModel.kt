@@ -170,7 +170,7 @@ class ProfileViewModel @Inject constructor(
             socialRepository.createStory(user.uid, user.username, caption, color).collect { result ->
                 _uiState.update { it.copy(isLoading = false) }
                 result.fold(
-                    onSuccess = { story ->
+                    onSuccess = { story: app.neon.com.data.model.UserStory ->
                         closeCreateStoryDialog()
                         onSuccess(story.id)
                     },
