@@ -137,6 +137,7 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
 
             authRepository.signInWithEmail(state.email, state.password).collect { result ->
                 result.fold(
@@ -157,6 +158,9 @@ class AuthViewModel @Inject constructor(
                         }
                     }
                 )
+            }
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
@@ -180,6 +184,7 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
 
             authRepository.signUpWithEmail(state.email, state.password).collect { result ->
                 result.fold(
@@ -203,6 +208,9 @@ class AuthViewModel @Inject constructor(
                     }
                 )
             }
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 
@@ -219,6 +227,7 @@ class AuthViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
 
             val targetUid = if (uid.isNotBlank()) uid else state.registeredUid ?: ""
             val targetEmail = if (email.isNotBlank()) email else state.registeredEmail ?: state.email
@@ -243,6 +252,8 @@ class AuthViewModel @Inject constructor(
                         }
                     }
                 )
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
             }
         }
     }
