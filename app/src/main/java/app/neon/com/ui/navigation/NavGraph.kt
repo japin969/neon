@@ -37,7 +37,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import app.neon.com.ui.auth.AuthViewModel
-import app.neon.com.ui.auth.CreateUsernameScreen
 import app.neon.com.ui.auth.LoginScreen
 import app.neon.com.ui.auth.RegisterScreen
 import app.neon.com.ui.call.CallScreen
@@ -66,10 +65,6 @@ sealed class Screen(val route: String) {
     object Splash : Screen("splash")
     object Login : Screen("login")
     object Register : Screen("register")
-    object CreateUsername : Screen("create_username?uid={uid}&email={email}") {
-        fun createRoute(uid: String = "", email: String = ""): String =
-            "create_username?uid=$uid&email=$email"
-    }
 
     object Main : Screen("main?tab={tab}") {
         fun createRoute(tab: String = "chat"): String = "main?tab=$tab"
@@ -173,12 +168,6 @@ class NeontNavigationActions(private val navController: NavHostController) {
         }
     }
 
-    fun navigateToCreateUsername(uid: String = "", email: String = "") {
-        navController.navigate(Screen.CreateUsername.createRoute(uid, email)) {
-            popUpTo(Screen.Register.route) { inclusive = true }
-            launchSingleTop = true
-        }
-    }
 
     fun navigateToMain(tab: String = "chat") {
         navController.navigate(Screen.Main.createRoute(tab)) {
@@ -287,14 +276,11 @@ fun NeontNavGraph(
 
         // 2. Layar Login (TAHAP 2)
         composable(Screen.Login.route) {
-            val authViewModel: AuthViewModel = hiltViewModel()
+            val loginViewModel: LoginViewModel = hiltViewModel()
             LoginScreen(
-                viewModel = authViewModel,
+                viewModel = loginViewModel,
                 onNavigateToRegister = {
                     navigationActions.navigateToRegister()
-                },
-                onNavigateToUsernameRequired = { uid, email ->
-                    navigationActions.navigateToCreateUsername(uid, email)
                 },
                 onLoginSuccess = {
                     navigationActions.navigateToMain("chat")
@@ -304,45 +290,19 @@ fun NeontNavGraph(
 
         // 3. Layar Registrasi (TAHAP 2)
         composable(Screen.Register.route) {
-            val authViewModel: AuthViewModel = hiltViewModel()
+            val registerViewModel: RegisterViewModel = hiltViewModel()
             RegisterScreen(
-                viewModel = authViewModel,
+                viewModel = registerViewModel,
                 onNavigateToLogin = {
                     navigationActions.navigateToLogin()
                 },
-                onRegisterSuccess = { uid, email ->
-                    navigationActions.navigateToCreateUsername(uid, email)
+                onRegisterSuccess = {
+                    navigationActions.navigateToMain("chat")
                 }
             )
         }
 
         // 4. Layar Buat Username (TAHAP 2)
-        composable(
-            route = Screen.CreateUsername.route,
-            arguments = listOf(
-                navArgument("uid") {
-                    type = NavType.StringType
-                    defaultValue = ""
-                },
-                navArgument("email") {
-                    type = NavType.StringType
-                    defaultValue = ""
-                }
-            )
-        ) { backStackEntry ->
-            val uid = backStackEntry.arguments?.getString("uid") ?: ""
-            val email = backStackEntry.arguments?.getString("email") ?: ""
-            val authViewModel: AuthViewModel = hiltViewModel()
-
-            CreateUsernameScreen(
-                uid = uid,
-                email = email,
-                viewModel = authViewModel,
-                onProfileCreated = {
-                    navigationActions.navigateToMain("chat")
-                }
-            )
-        }
 
         // 5. Layar Utama (Tabs: Chat, Music, Leaderboard, Profil)
         composable(
