@@ -7,6 +7,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -374,10 +376,12 @@ class MusicRepository(
                 .child(song.id)
 
             val newLoved = !currentLoved
-            if (newLoved) {
-                ref.setValue(true).await()
-            } else {
-                ref.removeValue().await()
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                if (newLoved) {
+                    ref.setValue(true).await()
+                } else {
+                    ref.removeValue().await()
+                }
             }
             emit(Result.success(newLoved))
         } catch (e: Exception) {
