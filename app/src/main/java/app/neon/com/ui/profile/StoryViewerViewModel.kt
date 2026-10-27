@@ -36,7 +36,7 @@ class StoryViewerViewModel @Inject constructor(
 
     fun initStories(userId: String) {
         viewModelScope.launch {
-            socialRepository.observeUserStories(userId).collect { list ->
+            socialRepository.observeUserStories(userId).collect { list: List<app.neon.com.data.model.UserStory> ->
                 _uiState.update {
                     it.copy(
                         stories = list,

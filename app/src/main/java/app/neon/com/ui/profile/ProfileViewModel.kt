@@ -63,7 +63,7 @@ class ProfileViewModel @Inject constructor(
 
             // Observe stories
             viewModelScope.launch {
-                socialRepository.observeUserStories(user.uid).collect { storyList ->
+                socialRepository.observeUserStories(user.uid).collect { storyList: List<app.neon.com.data.model.UserStory> ->
                     _uiState.update {
                         it.copy(
                             stories = storyList,
