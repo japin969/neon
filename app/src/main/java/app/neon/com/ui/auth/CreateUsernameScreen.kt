@@ -136,7 +136,7 @@ fun CreateUsernameScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Avatar Otomatis (Inisial 2 Huruf)",
+                text = "",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = neonCyan
@@ -255,7 +255,7 @@ fun CreateUsernameScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Tombol Konfirmasi Username
-                val isButtonEnabled = state.isUsernameAvailable == true && !state.isLoading
+                val isButtonEnabled = state.username.length >= 3 && !state.isLoading
 
                 Button(
                     onClick = {
