@@ -66,6 +66,7 @@ import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatListScreen(
     viewModel: ChatListViewModel,
@@ -399,7 +400,6 @@ private fun ChatListTopBar(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ChatItemRow(
     chat: ChatItem,

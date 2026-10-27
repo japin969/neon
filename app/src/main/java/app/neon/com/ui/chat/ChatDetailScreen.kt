@@ -82,6 +82,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatDetailScreen(
     chatId: String,
@@ -497,7 +498,6 @@ private fun PinnedMessageHeader(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SwipeableMessageBubble(
     message: ChatMessage,
