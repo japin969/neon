@@ -189,14 +189,33 @@ class AuthViewModel @Inject constructor(
             authRepository.signUpWithEmail(state.email, state.password).collect { result ->
                 result.fold(
                     onSuccess = { uid ->
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                registeredUid = uid,
-                                registeredEmail = state.email
+                        // Bikin username acak otomatis (contoh: user17123456)
+                        val randomUsername = "user${System.currentTimeMillis() % 100000000}"
+                        
+                        // Langsung simpan profil ke database
+                        authRepository.createUserProfile(uid, state.email, randomUsername).collect { profileResult ->
+                            profileResult.fold(
+                                onSuccess = { user ->
+                                    _uiState.update {
+                                        it.copy(
+                                            isLoading = false,
+                                            authenticatedUser = user,
+                                            registeredUid = uid,
+                                            registeredEmail = state.email
+                                        )
+                                    }
+                                    onSuccess(uid, state.email)
+                                },
+                                onFailure = { error ->
+                                    _uiState.update {
+                                        it.copy(
+                                            isLoading = false,
+                                            errorMessage = error.localizedMessage ?: "Gagal membuat profil otomatis."
+                                        )
+                                    }
+                                }
                             )
                         }
-                        onSuccess(uid, state.email)
                     },
                     onFailure = { error ->
                         _uiState.update {
