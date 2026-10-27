@@ -80,7 +80,7 @@ class RegisterViewModel(
                     val randomUsername = "user${System.currentTimeMillis() % 100000000}"
                     
                     // Simpan profil ke database (pakai AuthRepoSecure lama yang punya createUserProfile)
-                    val legacyRepo = app.neon.com.data.repository.AuthRepository()
+                    val legacyRepo = app.neon.com.data.repository.AuthRepository(app.neon.com.data.local.FileDatabaseManager(android.app.Application()))
                     legacyRepo.createUserProfile(firebaseUser.uid, current.email, randomUsername).collect { profileResult ->
                         profileResult.fold(
                             onSuccess = { user ->
