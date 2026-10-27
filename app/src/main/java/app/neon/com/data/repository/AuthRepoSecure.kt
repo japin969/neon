@@ -10,6 +10,12 @@ import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.tasks.await
 
 
+
+sealed class AuthResult<out T> {
+    data class Success<out T>(val data: T) : AuthResult<T>()
+    data class Error(val message: String, val throwable: Throwable? = null) : AuthResult<Nothing>()
+}
+
 class AuthRepoSecure(
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {

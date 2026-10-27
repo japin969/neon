@@ -37,6 +37,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import app.neon.com.ui.auth.AuthViewModel
+import app.neon.com.ui.auth.LoginViewModel
+import app.neon.com.ui.auth.RegisterViewModel
 import app.neon.com.ui.auth.LoginScreen
 import app.neon.com.ui.auth.RegisterScreen
 import app.neon.com.ui.call.CallScreen
