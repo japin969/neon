@@ -1,5 +1,6 @@
 package app.neon.com.data.repository
 
+import app.neon.com.data.model.ChatItem
 import app.neon.com.data.model.ChatMessage
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -9,6 +10,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -17,24 +19,15 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-/**
- * ChatRepository - Anti-Lag & Anti-Spam Firebase Firestore Repository
- * Dilengkapi:
- * 1. Flow .debounce(100L) untuk listener snapshot Firebase (anti-lag saat banjir pesan/spam).
- * 2. Operasi CRUD Firestore: sendMessage, sendReaction, deleteMessage, editMessage.
- * 3. Fallback in-memory cache jika Firestore offline / belum terinisialisasi.
- */
 class ChatRepository {
 
     private val firestore: FirebaseFirestore? = runCatching {
         FirebaseFirestore.getInstance()
     }.getOrNull()
 
-    // Local in-memory store for instant responsiveness & offline fallback
     private val localStore = mutableMapOf<String, MutableList<ChatMessage>>()
 
     init {
-        // Seed default chat data for demo
         val defaultChatId = "chat_aura"
         localStore[defaultChatId] = mutableListOf(
             ChatMessage(
@@ -48,50 +41,12 @@ class ChatRepository {
                 isFromMe = false,
                 isRead = true,
                 reactions = mapOf("my_uid" to "❤️")
-            ),
-            ChatMessage(
-                msgId = "m_2",
-                chatId = defaultChatId,
-                senderId = "my_uid",
-                senderName = "Saya",
-                text = "Lagi dengerin pop hits terbaru, audionya jernih banget!",
-                time = "10:38",
-                timestamp = System.currentTimeMillis() - 7 * 60 * 1000,
-                isFromMe = true,
-                isRead = true
-            ),
-            ChatMessage(
-                msgId = "m_3",
-                chatId = defaultChatId,
-                senderId = "aura_1",
-                senderName = "Aura Cantika",
-                text = "Coba dengerin playlist ini, barusan ku-share di grup musik",
-                time = "10:40",
-                timestamp = System.currentTimeMillis() - 5 * 60 * 1000,
-                isFromMe = false,
-                isRead = true
-            ),
-            ChatMessage(
-                msgId = "m_4",
-                chatId = defaultChatId,
-                senderId = "aura_1",
-                senderName = "Aura Cantika",
-                text = "Lagu yang barusan kamu putar di Neont enak banget! 🎶",
-                time = "10:42",
-                timestamp = System.currentTimeMillis() - 3 * 60 * 1000,
-                isFromMe = false,
-                isRead = true,
-                reactions = mapOf("my_uid" to "🔥")
             )
         )
     }
 
-    /**
-     * Mengamati pesan secara realtime dari Firestore dengan .debounce(100L) anti-lag.
-     */
     fun observeMessages(chatId: String, currentUserId: String): Flow<List<ChatMessage>> {
         return callbackFlow {
-            // Emit data lokal terlebih dahulu untuk kecepatan instan
             val cached = localStore[chatId] ?: emptyList()
             trySend(cached)
 
@@ -150,17 +105,39 @@ class ChatRepository {
                     listenerRegistration.remove()
                 }
             } else {
-                // Standalone / offline mode
                 awaitClose { }
             }
         }
-        .debounce(100L) // 🚀 ANTI-LAG: Mencegah jank saat ratusan pesan masuk per detik
-        .flowOn(Dispatchers.IO)
+            .debounce(100L)
+            .flowOn(Dispatchers.IO)
     }
 
-    /**
-     * Mengirim pesan baru ke Firebase Firestore dan update metadata percakapan
-     */
+    fun observeUserChats(userId: String): Flow<List<ChatItem>> {
+        return flow {
+            val chats = listOf(
+                ChatItem(
+                    id = "chat_aura",
+                    isGroup = false,
+                    chatName = "Aura Cantika",
+                    recipientId = "aura_1",
+                    recipientUsername = "Aura Cantika",
+                    recipientAvatarColor = "#7C3AED",
+                    recipientAvatarUrl = ""
+                ),
+                ChatItem(
+                    id = "chat_beni",
+                    isGroup = false,
+                    chatName = "Beni",
+                    recipientId = "beni_1",
+                    recipientUsername = "Beni",
+                    recipientAvatarColor = "#22C55E",
+                    recipientAvatarUrl = ""
+                )
+            )
+            emit(chats)
+        }.flowOn(Dispatchers.IO)
+    }
+
     suspend fun sendMessage(
         chatId: String,
         text: String,
@@ -185,7 +162,6 @@ class ChatRepository {
             replyTo = replyTo
         )
 
-        // Simpan ke local cache
         val currentList = localStore.getOrPut(chatId) { mutableListOf() }
         currentList.add(newMessage)
 
@@ -208,7 +184,6 @@ class ChatRepository {
                     messageMap["replyTo"] = replyTo
                 }
 
-                // Simpan ke Firestore
                 firestore.collection("chats")
                     .document(chatId)
                     .collection("messages")
@@ -216,7 +191,6 @@ class ChatRepository {
                     .set(messageMap)
                     .await()
 
-                // Update metadata percakapan (lastMessage, lastUpdated)
                 firestore.collection("chats")
                     .document(chatId)
                     .set(
@@ -234,16 +208,12 @@ class ChatRepository {
         Result.success(newMessage)
     }
 
-    /**
-     * Mengirim reaksi emoji (Long-press bubble) dan menyimpan ke Firebase
-     */
     suspend fun sendReaction(
         chatId: String,
         msgId: String,
         userId: String,
         emoji: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
-        // Update local cache
         val list = localStore[chatId]
         if (list != null) {
             val index = list.indexOfFirst { it.msgId == msgId }
@@ -251,7 +221,7 @@ class ChatRepository {
                 val target = list[index]
                 val currentReactions = target.reactions.toMutableMap()
                 if (currentReactions[userId] == emoji) {
-                    currentReactions.remove(userId) // Toggle off jika emoji sama
+                    currentReactions.remove(userId)
                 } else {
                     currentReactions[userId] = emoji
                 }
@@ -259,7 +229,6 @@ class ChatRepository {
             }
         }
 
-        // Simpan ke Firestore
         if (firestore != null) {
             runCatching {
                 val docRef = firestore.collection("chats")
@@ -274,15 +243,11 @@ class ChatRepository {
         Result.success(Unit)
     }
 
-    /**
-     * Menghapus pesan di Firestore (Soft delete atau hard delete)
-     */
     suspend fun deleteMessage(
         chatId: String,
         msgId: String,
         deleteForEveryone: Boolean = true
     ): Result<Unit> = withContext(Dispatchers.IO) {
-        // Update local cache
         val list = localStore[chatId]
         if (list != null) {
             val index = list.indexOfFirst { it.msgId == msgId }
@@ -298,7 +263,6 @@ class ChatRepository {
             }
         }
 
-        // Update Firestore
         if (firestore != null) {
             runCatching {
                 val docRef = firestore.collection("chats")
@@ -322,15 +286,11 @@ class ChatRepository {
         Result.success(Unit)
     }
 
-    /**
-     * Mengedit pesan di Firestore
-     */
     suspend fun editMessage(
         chatId: String,
         msgId: String,
         newText: String
     ): Result<Unit> = withContext(Dispatchers.IO) {
-        // Update local cache
         val list = localStore[chatId]
         if (list != null) {
             val index = list.indexOfFirst { it.msgId == msgId }
@@ -342,7 +302,6 @@ class ChatRepository {
             }
         }
 
-        // Update Firestore
         if (firestore != null) {
             runCatching {
                 firestore.collection("chats")

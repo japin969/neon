@@ -366,7 +366,9 @@ fun NeontNavGraph(
             val recipientId = backStackEntry.arguments?.getString("recipientId") ?: ""
             val isGroup = backStackEntry.arguments?.getBoolean("isGroup") ?: false
             val chatName = backStackEntry.arguments?.getString("chatName") ?: ""
+            val chatViewModel: app.neon.com.ui.viewmodel.ChatViewModel = androidx.hilt.navigation.compose.hiltViewModel()
             ChatDetailScreen(
+                chatViewModel = chatViewModel,
                 chatPartnerName = chatName,
                 onBackClick = { navigationActions.navigateBack() }
             )

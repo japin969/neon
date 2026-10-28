@@ -74,20 +74,13 @@ import app.neon.com.ui.theme.GhSurface
 import app.neon.com.ui.theme.GhTextPrimary
 import app.neon.com.ui.theme.GhTextSecondary
 import app.neon.com.ui.theme.InterFontFamily
+import app.neon.com.ui.theme.bouncyClickable
 import app.neon.com.ui.viewmodel.ChatViewModel
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import kotlinx.coroutines.launch
 
-/**
- * ChatDetailScreen - Terhubung Langsung ke ChatViewModel & Firebase:
- * 1. Tombol Kirim di ComposerBar: memanggil chatViewModel.sendMessage(chatId, text)
- * 2. Tombol Call/Video: memanggil onCallClick(isVideo) (navigasi ke call_screen)
- * 3. Fitur Reaksi (Long-Press): memanggil chatViewModel.sendReaction(chatId, msgId, emoji)
- * 4. Fitur Delete/Edit: menghapus & mengedit data di Firebase secara nyata
- * 5. Anti-Lag & Paging: LazyColumn dengan parameter key unik dan pagination 50 pesan
- */
 @Composable
 fun ChatDetailScreen(
     chatViewModel: ChatViewModel,
@@ -102,31 +95,24 @@ fun ChatDetailScreen(
     val listState = rememberLazyListState()
 
     var inputText by remember { mutableStateOf("") }
-    var currentLimit by remember { mutableIntStateOf(50) } // Paging 50 pesan
+    var currentLimit by remember { mutableIntStateOf(50) }
 
-    // Dialog state untuk Edit Pesan
     var messageToEdit by remember { mutableStateOf<ChatMessage?>(null) }
     var editTextValue by remember { mutableStateOf("") }
 
-    // Dialog konfirmasi Hapus Pesan
     var messageToDeleteId by remember { mutableStateOf<String?>(null) }
 
-    // Status Pesan Reply
     val replyMessage by chatViewModel.replyMessage.collectAsState()
-
-    // Mengambil pesan yang diamati dari Firestore melalui Flow debounce(100L)
     val allMessages by chatViewModel.messages.collectAsState()
 
     LaunchedEffect(chatId) {
         chatViewModel.loadChat(chatId)
     }
 
-    // Paging 50 pesan terakhir
     val pagedMessages = remember(allMessages, currentLimit) {
         allMessages.takeLast(currentLimit)
     }
 
-    // Deteksi posisi scroll pengguna via derivedStateOf
     val isUserScrolledUp by remember {
         derivedStateOf {
             val total = listState.layoutInfo.totalItemsCount
@@ -139,16 +125,12 @@ fun ChatDetailScreen(
         derivedStateOf { inputText.trim().isNotEmpty() }
     }
 
-    // Auto-scroll ke pesan terbaru jika pengguna berada di dasar layar
     LaunchedEffect(allMessages.size) {
         if (!isUserScrolledUp && pagedMessages.isNotEmpty()) {
             listState.animateScrollToItem(pagedMessages.size - 1)
         }
     }
 
-    /**
-     * Menjalankan logika kirim pesan ke ViewModel -> Firebase
-     */
     fun performSendMessage() {
         if (!canSend) return
         val textToSend = inputText.trim()
@@ -169,9 +151,6 @@ fun ChatDetailScreen(
             .statusBarsPadding()
             .imePadding()
     ) {
-        // ==========================================
-        // 🍎 Top Bar WhatsApp iOS (Avatar, Nama, Tombol Panggilan)
-        // ==========================================
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -239,7 +218,6 @@ fun ChatDetailScreen(
                 )
             }
 
-            // Tombol Video Call: Memanggil onCallClick(true)
             IconButton(
                 onClick = { onCallClick(true) },
                 modifier = Modifier.size(36.dp)
@@ -252,7 +230,6 @@ fun ChatDetailScreen(
                 )
             }
 
-            // Tombol Voice Call: Memanggil onCallClick(false)
             IconButton(
                 onClick = { onCallClick(false) },
                 modifier = Modifier.size(36.dp)
@@ -266,9 +243,6 @@ fun ChatDetailScreen(
             }
         }
 
-        // ==========================================
-        // 💬 LazyColumn Pesan dengan Key Unik & Paging
-        // ==========================================
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -279,7 +253,6 @@ fun ChatDetailScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
             ) {
-                // Header Paging Muat Lebih Banyak
                 if (allMessages.size > currentLimit) {
                     item(key = "load_more_paging_header") {
                         Box(
@@ -305,7 +278,7 @@ fun ChatDetailScreen(
 
                 items(
                     items = pagedMessages,
-                    key = { it.msgId } // WAJIB KEY UNIK
+                    key = { it.msgId }
                 ) { msg ->
                     MessageBubble(
                         message = msg,
@@ -323,14 +296,12 @@ fun ChatDetailScreen(
                             chatViewModel.setReplyMessage(targetMsg)
                         },
                         onForwardClick = { targetMsg ->
-                            // Forward ke percakapan default
                             chatViewModel.sendMessage(chatId, "Forwarded: ${targetMsg.text}")
                         }
                     )
                 }
             }
 
-            // Tombol Scroll ke Bawah
             AnimatedVisibility(
                 visible = isUserScrolledUp,
                 enter = fadeIn(),
@@ -363,9 +334,6 @@ fun ChatDetailScreen(
             }
         }
 
-        // ==========================================
-        // ↩️ Banner Reply Pesan Aktif
-        // ==========================================
         AnimatedVisibility(
             visible = replyMessage != null,
             enter = fadeIn(),
@@ -413,9 +381,6 @@ fun ChatDetailScreen(
             }
         }
 
-        // ==========================================
-        // ⌨️ Composer WhatsApp iOS
-        // ==========================================
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -437,7 +402,6 @@ fun ChatDetailScreen(
                 )
             }
 
-            // Kotak Input Composer (bg GhBackground, sudut 20dp)
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -484,7 +448,6 @@ fun ChatDetailScreen(
 
             Spacer(modifier = Modifier.width(2.dp))
 
-            // Tombol Kirim: Memanggil performSendMessage() -> chatViewModel.sendMessage(chatId, text)
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -503,9 +466,6 @@ fun ChatDetailScreen(
         }
     }
 
-    // ==========================================
-    // ✏️ Dialog Edit Pesan Firebase
-    // ==========================================
     if (messageToEdit != null) {
         AlertDialog(
             onDismissRequest = { messageToEdit = null },
@@ -555,9 +515,6 @@ fun ChatDetailScreen(
         )
     }
 
-    // ==========================================
-    // 🗑️ Dialog Hapus Pesan Firebase
-    // ==========================================
     if (messageToDeleteId != null) {
         AlertDialog(
             onDismissRequest = { messageToDeleteId = null },

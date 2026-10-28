@@ -2,8 +2,12 @@ package app.neon.com.di
 
 import android.content.Context
 import app.neon.com.data.local.FileDatabaseManager
-import app.neon.com.data.player.MusicController
 import app.neon.com.data.repository.AuthRepository
+import app.neon.com.data.repository.ChatRepository
+import app.neon.com.data.repository.GroupRepository
+import app.neon.com.data.repository.MusicRepository
+import app.neon.com.data.repository.SocialRepository
+import app.neon.com.data.webrtc.WebRTCClient
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,39 +37,35 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideChatRepository(
-        fileDatabaseManager: FileDatabaseManager
-    ): app.neon.com.data.repository.ChatRepository {
-        return app.neon.com.data.repository.ChatRepository(fileDatabaseManager)
+    fun provideChatRepository(): ChatRepository {
+        return ChatRepository()
     }
-
 
     @Provides
     @Singleton
-    fun provideGroupRepository(): app.neon.com.data.repository.GroupRepository {
-        return app.neon.com.data.repository.GroupRepository()
+    fun provideGroupRepository(): GroupRepository {
+        return GroupRepository()
     }
 
     @Provides
     @Singleton
     fun provideSocialRepository(
         fileDatabaseManager: FileDatabaseManager
-    ): app.neon.com.data.repository.SocialRepository {
-        return app.neon.com.data.repository.SocialRepository(fileDatabaseManager)
+    ): SocialRepository {
+        return SocialRepository(fileDatabaseManager)
     }
 
     @Provides
     @Singleton
-    fun provideMusicRepository(): app.neon.com.data.repository.MusicRepository {
-        return app.neon.com.data.repository.MusicRepository()
+    fun provideMusicRepository(): MusicRepository {
+        return MusicRepository()
     }
-
 
     @Provides
     @Singleton
     fun provideWebRTCClient(
         @ApplicationContext context: Context
-    ): app.neon.com.data.webrtc.WebRTCClient {
-        return app.neon.com.data.webrtc.WebRTCClient(context)
+    ): WebRTCClient {
+        return WebRTCClient(context)
     }
 }

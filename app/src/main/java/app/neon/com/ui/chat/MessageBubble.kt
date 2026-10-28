@@ -32,7 +32,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import com.vanniktech.emoji.EmojiManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,20 +47,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.neon.com.data.model.ChatMessage
 import app.neon.com.ui.theme.GhAccentGreen
+import app.neon.com.ui.theme.GhBackground
 import app.neon.com.ui.theme.GhBorder
 import app.neon.com.ui.theme.GhButtonPrimary
 import app.neon.com.ui.theme.GhSurface
 import app.neon.com.ui.theme.GhTextPrimary
 import app.neon.com.ui.theme.GhTextSecondary
 import app.neon.com.ui.theme.InterFontFamily
+import app.neon.com.ui.theme.bouncyClickable
 
-/**
- * MessageBubble - WhatsApp iPhone (iOS) Bubble:
- * - Bubble Keluar: GhButtonPrimary (#1F6FEB), teks putih, sudut 18dp
- * - Bubble Masuk: GhSurface (#161B22), teks GhTextPrimary, sudut 18dp
- * - Long-Press: Membuka popover reaksi iOS (❤️, 👍, 😂, 😮, 😢, 🙏) dan menu Edit/Delete/Forward/Reply
- * - Menampilkan lencana reaksi emoji di sudut bawah bubble
- */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MessageBubble(
@@ -102,7 +96,6 @@ fun MessageBubble(
             .padding(vertical = 4.dp),
         horizontalAlignment = if (message.isFromMe) Alignment.End else Alignment.Start
     ) {
-        // Popover Reaksi Cepat (Muncul saat Long Press)
         AnimatedVisibility(
             visible = showMenu,
             enter = fadeIn(),
@@ -141,7 +134,6 @@ fun MessageBubble(
                 Column(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp)
                 ) {
-                    // Preview Reply jika ada
                     if (!message.replyTo.isNullOrEmpty()) {
                         Box(
                             modifier = Modifier
@@ -161,7 +153,6 @@ fun MessageBubble(
                         Spacer(modifier = Modifier.height(4.dp))
                     }
 
-                    // Teks Pesan (Inter 15sp)
                     Text(
                         text = message.text,
                         fontFamily = InterFontFamily,
@@ -173,7 +164,6 @@ fun MessageBubble(
 
                     Spacer(modifier = Modifier.height(3.dp))
 
-                    // Baris Waktu & Centang
                     Row(
                         modifier = Modifier.align(Alignment.End),
                         verticalAlignment = Alignment.CenterVertically
@@ -207,7 +197,6 @@ fun MessageBubble(
                 }
             }
 
-            // Menu Konteks WhatsApp iOS (Aksi Edit, Hapus, Balas, Teruskan)
             DropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false },
@@ -252,7 +241,6 @@ fun MessageBubble(
             }
         }
 
-        // Lencana Reaksi Emoji di Sudut Bubble
         if (message.reactions.isNotEmpty()) {
             Row(
                 modifier = Modifier
@@ -265,7 +253,11 @@ fun MessageBubble(
             ) {
                 val emojiList = message.reactions.values.distinct()
                 emojiList.forEach { emoji ->
-                    Text(text = EmojiManager.getInstance().replaceWithImages(emoji), fontSize = 12.sp, modifier = Modifier.padding(horizontal = 2.dp))
+                    Text(
+                        text = emoji,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 2.dp)
+                    )
                 }
                 if (message.reactions.size > 1) {
                     Text(
@@ -280,9 +272,6 @@ fun MessageBubble(
     }
 }
 
-/**
- * Baris Reaksi Cepat iOS WhatsApp (❤️, 👍, 😂, 😮, 😢, 🙏)
- */
 @Composable
 fun QuickReactionRow(
     onSelectEmoji: (String) -> Unit
