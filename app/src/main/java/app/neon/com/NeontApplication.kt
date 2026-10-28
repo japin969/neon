@@ -1,6 +1,7 @@
 package app.neon.com
 
 import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
 import com.vanniktech.emoji.EmojiManager
 import com.vanniktech.emoji.ios.IosEmojiProvider
 
@@ -9,6 +10,7 @@ import com.vanniktech.emoji.ios.IosEmojiProvider
  * Mengonfigurasi Emoji iOS (Vanniktech IosEmojiProvider) agar seluruh emoji di aplikasi
  * menggunakan grafis otentik Apple iPhone.
  */
+@HiltAndroidApp
 class NeontApplication : Application() {
 
     override fun onCreate() {
