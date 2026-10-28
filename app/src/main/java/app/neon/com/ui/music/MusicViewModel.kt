@@ -89,15 +89,11 @@ class MusicViewModel @Inject constructor(
 
     private fun loadTrendingAndRecommended() {
         viewModelScope.launch {
-            musicRepository.getTrendingSongs().collect { result ->
-                result.fold(
-                    onSuccess = { list ->
-                        _uiState.update { it.copy(trendingSongs = list, isLoadingTrending = false) }
-                    },
-                    onFailure = {
-                        _uiState.update { it.copy(isLoadingTrending = false) }
-                    }
-                )
+            try {
+                val list = musicRepository.getTrendingSongs()
+                _uiState.update { it.copy(trendingSongs = list, isLoadingTrending = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoadingTrending = false) }
             }
         }
 

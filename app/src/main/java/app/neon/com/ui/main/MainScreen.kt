@@ -117,10 +117,9 @@ fun MainScreen(
                     )
                 }
                 "music" -> {
-                    val musicViewModel: MusicViewModel = hiltViewModel()
                     MusicHomeScreen(
-                        viewModel = musicViewModel,
-                        onOpenMusicPlayer = onNavigateToMusicPlayer
+                        repository = app.neon.com.data.repository.MusicRepository(),
+                        currentUserId = "user_neont_guest"
                     )
                 }
                 "leaderboard" -> {
