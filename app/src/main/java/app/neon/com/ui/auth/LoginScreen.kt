@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.neon.com.ui.chat.bouncyClickable
 import app.neon.com.ui.theme.GhBackground
+import app.neon.com.ui.theme.bouncyClickable
 import app.neon.com.ui.theme.GhBorder
 import app.neon.com.ui.theme.GhButtonPrimary
 import app.neon.com.ui.theme.GhSurface

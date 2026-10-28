@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.neon.com.ui.theme.GhAccentGreen
+import app.neon.com.ui.theme.bouncyClickable
 import app.neon.com.ui.theme.GhBackground
 import app.neon.com.ui.theme.GhBorder
 import app.neon.com.ui.theme.GhButtonPrimary

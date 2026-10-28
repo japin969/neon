@@ -302,15 +302,6 @@ fun ChatDetailScreen(
                 }
             }
 
-            AnimatedVisibility(
-                visible = isUserScrolledUp,
-                enter = fadeIn(),
-                exit = fadeOut(),
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                Box(
                     modifier = Modifier
                         .size(38.dp)
                         .shadow(4.dp, CircleShape)

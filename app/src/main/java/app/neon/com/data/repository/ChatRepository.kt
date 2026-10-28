@@ -320,4 +320,28 @@ class ChatRepository {
 
         Result.success(Unit)
     }
+
+    fun searchContactByUsername(query: String): Flow<Result<User?>> = flow {
+        try {
+            val ref = com.google.firebase.database.FirebaseDatabase.getInstance()
+                .getReference("usernames")
+                .child(query.lowercase().trim())
+            ref.get().await().let { snapshot ->
+                val uid = snapshot.getValue(String::class.java)
+                if (uid != null) {
+                    val userRef = com.google.firebase.database.FirebaseDatabase.getInstance()
+                        .getReference("users")
+                        .child(uid)
+                    userRef.get().await().let { userSnap ->
+                        val user = userSnap.getValue(User::class.java)
+                        emit(Result.success(user))
+                    }
+                } else {
+                    emit(Result.success(null))
+                }
+            }
+        } catch (e: Exception) {
+            emit(Result.failure(e))
+        }
+    }
 }

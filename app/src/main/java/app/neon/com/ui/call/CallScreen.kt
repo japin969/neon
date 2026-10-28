@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import app.neon.com.data.webrtc.CallConnectionState
 import app.neon.com.ui.chat.bouncyClickable
 import app.neon.com.ui.theme.GhBorder
+import app.neon.com.ui.theme.bouncyClickable
 import app.neon.com.ui.theme.GhCallEndRed
 import app.neon.com.ui.theme.GhSurface
 import app.neon.com.ui.theme.GhTextPrimary
