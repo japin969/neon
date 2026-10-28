@@ -32,6 +32,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import com.vanniktech.emoji.EmojiManager
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -264,7 +265,7 @@ fun MessageBubble(
             ) {
                 val emojiList = message.reactions.values.distinct()
                 emojiList.forEach { emoji ->
-                    Text(text = emoji, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 2.dp))
+                    Text(text = EmojiManager.getInstance().replaceWithImages(emoji), fontSize = 12.sp, modifier = Modifier.padding(horizontal = 2.dp))
                 }
                 if (message.reactions.size > 1) {
                     Text(
