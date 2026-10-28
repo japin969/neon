@@ -74,7 +74,6 @@ import app.neon.com.ui.theme.GhSurface
 import app.neon.com.ui.theme.GhTextPrimary
 import app.neon.com.ui.theme.GhTextSecondary
 import app.neon.com.ui.theme.InterFontFamily
-import app.neon.com.ui.theme.bouncyClickable
 import app.neon.com.ui.viewmodel.ChatViewModel
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
@@ -302,6 +301,15 @@ fun ChatDetailScreen(
                 }
             }
 
+            AnimatedVisibility(
+                visible = isUserScrolledUp,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Box(
                     modifier = Modifier
                         .size(38.dp)
                         .shadow(4.dp, CircleShape)
@@ -366,7 +374,12 @@ fun ChatDetailScreen(
                         onClick = { chatViewModel.setReplyMessage(null) },
                         modifier = Modifier.size(28.dp)
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Tutup Balasan", tint = GhTextSecondary, modifier = Modifier.size(16.dp))
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Tutup Balasan",
+                            tint = GhTextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
             }
@@ -444,7 +457,7 @@ fun ChatDetailScreen(
                     .size(36.dp)
                     .clip(CircleShape)
                     .background(if (canSend) GhButtonPrimary else GhBorder)
-                    .bouncyClickable(onClick = { performSendMessage() }),
+                    .clickable { performSendMessage() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -494,12 +507,21 @@ fun ChatDetailScreen(
                         messageToEdit = null
                     }
                 ) {
-                    Text("Simpan", fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, color = GhButtonPrimary)
+                    Text(
+                        "Simpan",
+                        fontFamily = InterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = GhButtonPrimary
+                    )
                 }
             },
             dismissButton = {
                 TextButton(onClick = { messageToEdit = null }) {
-                    Text("Batal", fontFamily = InterFontFamily, color = GhTextSecondary)
+                    Text(
+                        "Batal",
+                        fontFamily = InterFontFamily,
+                        color = GhTextSecondary
+                    )
                 }
             },
             containerColor = GhSurface
@@ -535,12 +557,21 @@ fun ChatDetailScreen(
                         messageToDeleteId = null
                     }
                 ) {
-                    Text("Hapus", fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, color = Color(0xFFFF453A))
+                    Text(
+                        "Hapus",
+                        fontFamily = InterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFF453A)
+                    )
                 }
             },
             dismissButton = {
                 TextButton(onClick = { messageToDeleteId = null }) {
-                    Text("Batal", fontFamily = InterFontFamily, color = GhTextSecondary)
+                    Text(
+                        "Batal",
+                        fontFamily = InterFontFamily,
+                        color = GhTextSecondary
+                    )
                 }
             },
             containerColor = GhSurface
