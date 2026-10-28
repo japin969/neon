@@ -1,4 +1,4 @@
-package app.neon.com.ui.screens
+package app.neon.com.ui.music
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -351,7 +351,7 @@ fun MusicHomeScreen(
                                     modifier = Modifier.padding(horizontal = 20.dp)
                                 )
                                 Text(
-                                    text = "Baru-baru ini diputar",
+                                    text = "Riwayat putar asli tersinkronisasi akun",
                                     style = typography.footnote,
                                     color = colors.textSecondary,
                                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp)

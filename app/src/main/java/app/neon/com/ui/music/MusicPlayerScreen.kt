@@ -170,9 +170,9 @@ fun MusicPlayerScreen(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (song.coverUrl.isNotBlank()) {
+                    if (song.albumCoverUrl.isNotBlank()) {
                         AsyncImage(
-                            model = song.coverUrl,
+                            model = song.albumCoverUrl,
                             contentDescription = song.title,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()

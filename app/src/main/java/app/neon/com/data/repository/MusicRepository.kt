@@ -388,4 +388,18 @@ class MusicRepository(
             emit(Result.failure(e))
         }
     }
+
+    fun observeLovedSongIds(userId: String): Flow<Set<String>> = flow {
+        val ref = com.google.firebase.database.FirebaseDatabase.getInstance()
+            .getReference("users").child(userId).child("lovedSongs")
+        ref.get().await().let { snapshot ->
+            val loved = mutableSetOf<String>()
+            snapshot.children.forEach { child -> loved.add(child.key ?: "") }
+            emit(loved)
+        }
+    }
+
+    suspend fun getTrendingSongs(): List<Song> = withContext(Dispatchers.IO) {
+        getPopularSongs()
+    }
 }
