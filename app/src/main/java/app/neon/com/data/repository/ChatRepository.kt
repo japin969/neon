@@ -1,341 +1,364 @@
 package app.neon.com.data.repository
 
-import app.neon.com.data.crypto.MessageCrypto
-import app.neon.com.data.local.FileDatabaseManager
-import app.neon.com.data.model.ChatItem
-import app.neon.com.data.model.User
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
-import kotlinx.coroutines.CoroutineScope
+import app.neon.com.data.model.ChatMessage
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
-import javax.inject.Singleton
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
 
-@Singleton
-class ChatRepository @Inject constructor(
-    private val localDatabase: FileDatabaseManager
-) {
-    private val firebaseDatabase: FirebaseDatabase = FirebaseDatabase.getInstance()
+/**
+ * ChatRepository - Anti-Lag & Anti-Spam Firebase Firestore Repository
+ * Dilengkapi:
+ * 1. Flow .debounce(100L) untuk listener snapshot Firebase (anti-lag saat banjir pesan/spam).
+ * 2. Operasi CRUD Firestore: sendMessage, sendReaction, deleteMessage, editMessage.
+ * 3. Fallback in-memory cache jika Firestore offline / belum terinisialisasi.
+ */
+class ChatRepository {
+
+    private val firestore: FirebaseFirestore? = runCatching {
+        FirebaseFirestore.getInstance()
+    }.getOrNull()
+
+    // Local in-memory store for instant responsiveness & offline fallback
+    private val localStore = mutableMapOf<String, MutableList<ChatMessage>>()
+
+    init {
+        // Seed default chat data for demo
+        val defaultChatId = "chat_aura"
+        localStore[defaultChatId] = mutableListOf(
+            ChatMessage(
+                msgId = "m_1",
+                chatId = defaultChatId,
+                senderId = "aura_1",
+                senderName = "Aura Cantika",
+                text = "Hai! Lagi dengerin lagu apa di Neont? 🎧",
+                time = "10:35",
+                timestamp = System.currentTimeMillis() - 10 * 60 * 1000,
+                isFromMe = false,
+                isRead = true,
+                reactions = mapOf("my_uid" to "❤️")
+            ),
+            ChatMessage(
+                msgId = "m_2",
+                chatId = defaultChatId,
+                senderId = "my_uid",
+                senderName = "Saya",
+                text = "Lagi dengerin pop hits terbaru, audionya jernih banget!",
+                time = "10:38",
+                timestamp = System.currentTimeMillis() - 7 * 60 * 1000,
+                isFromMe = true,
+                isRead = true
+            ),
+            ChatMessage(
+                msgId = "m_3",
+                chatId = defaultChatId,
+                senderId = "aura_1",
+                senderName = "Aura Cantika",
+                text = "Coba dengerin playlist ini, barusan ku-share di grup musik",
+                time = "10:40",
+                timestamp = System.currentTimeMillis() - 5 * 60 * 1000,
+                isFromMe = false,
+                isRead = true
+            ),
+            ChatMessage(
+                msgId = "m_4",
+                chatId = defaultChatId,
+                senderId = "aura_1",
+                senderName = "Aura Cantika",
+                text = "Lagu yang barusan kamu putar di Neont enak banget! 🎶",
+                time = "10:42",
+                timestamp = System.currentTimeMillis() - 3 * 60 * 1000,
+                isFromMe = false,
+                isRead = true,
+                reactions = mapOf("my_uid" to "🔥")
+            )
+        )
+    }
 
     /**
-     * Observes all chats for the authenticated user in Realtime.
-     * Integrates decrypted last message preview, pinned status, and archive folder filter.
+     * Mengamati pesan secara realtime dari Firestore dengan .debounce(100L) anti-lag.
      */
-    fun observeUserChats(currentUserId: String): Flow<List<ChatItem>> = callbackFlow {
-        if (currentUserId.isBlank()) {
-            trySend(localDatabase.getCachedChats())
-            close()
-            return@callbackFlow
-        }
+    fun observeMessages(chatId: String, currentUserId: String): Flow<List<ChatMessage>> {
+        return callbackFlow {
+            // Emit data lokal terlebih dahulu untuk kecepatan instan
+            val cached = localStore[chatId] ?: emptyList()
+            trySend(cached)
 
-        val chatsRef = firebaseDatabase.getReference("chats")
-        val userPrefsRef = firebaseDatabase.getReference("users").child(currentUserId)
+            if (firestore != null) {
+                val collectionRef = firestore.collection("chats")
+                    .document(chatId)
+                    .collection("messages")
+                    .orderBy("timestamp", Query.Direction.ASCENDING)
 
-        // Read user's pinned, archived, and hidden preferences
-        var pinnedChatIds = setOf<String>()
-        var archivedChatIds = setOf<String>()
-        var hiddenChatIds = setOf<String>()
-
-        val userPrefsListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                pinnedChatIds = snapshot.child("pinnedChats").children
-                    .filter { it.getValue(Boolean::class.java) == true }
-                    .mapNotNull { it.key }
-                    .toSet()
-
-                archivedChatIds = snapshot.child("archivedChats").children
-                    .filter { it.getValue(Boolean::class.java) == true }
-                    .mapNotNull { it.key }
-                    .toSet()
-
-                hiddenChatIds = snapshot.child("hiddenChats").children
-                    .filter { it.getValue(Boolean::class.java) == true }
-                    .mapNotNull { it.key }
-                    .toSet()
-            }
-
-            override fun onCancelled(error: DatabaseError) {}
-        }
-        userPrefsRef.addValueEventListener(userPrefsListener)
-
-        val chatsListener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val chatList = mutableListOf<ChatItem>()
-
-                for (child in snapshot.children) {
-                    val chatId = child.key ?: continue
-
-                    // Check if current user is hidden from this chat
-                    if (hiddenChatIds.contains(chatId)) continue
-
-                    // Check if current user is a participant
-                    val participantsSnapshot = child.child("participants")
-                    val isParticipant = participantsSnapshot.child(currentUserId).getValue(Boolean::class.java) == true
-
-                    if (!isParticipant) continue
-
-                    val isGroup = child.child("isGroup").getValue(Boolean::class.java) ?: false
-                    val chatName = child.child("chatName").getValue(String::class.java) ?: ""
-                    val rawLastMessage = child.child("lastMessage").getValue(String::class.java) ?: ""
-                    val timestamp = child.child("lastMessageTimestamp").getValue(Long::class.java) ?: 0L
-                    val unreadCount = child.child("unread_${currentUserId}").getValue(Int::class.java) ?: 0
-                    val pinnedMsgId = child.child("pinnedMessageId").getValue(String::class.java) ?: ""
-
-                    // Decrypt preview if encrypted
-                    val displayLastMsg = if (rawLastMessage.isNotBlank()) {
-                        MessageCrypto.decrypt(rawLastMessage, chatId)
-                    } else {
-                        "Belum ada pesan"
+                val listenerRegistration = collectionRef.addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        trySend(localStore[chatId] ?: emptyList())
+                        return@addSnapshotListener
                     }
 
-                    // Extract recipient data for 1-on-1 direct chat
-                    var recipientId = ""
-                    var recipientUsername = ""
-                    var recipientAvatarColor = "#00FF66"
-                    var recipientAvatarUrl = ""
+                    if (snapshot != null && !snapshot.isEmpty) {
+                        val messages = snapshot.documents.mapNotNull { doc ->
+                            val msgId = doc.id
+                            val text = doc.getString("text") ?: ""
+                            val senderId = doc.getString("senderId") ?: ""
+                            val senderName = doc.getString("senderName") ?: ""
+                            val time = doc.getString("time") ?: ""
+                            val timestamp = doc.getLong("timestamp") ?: System.currentTimeMillis()
+                            val isRead = doc.getBoolean("isRead") ?: false
+                            val isEdited = doc.getBoolean("isEdited") ?: false
+                            val isDeleted = doc.getBoolean("isDeleted") ?: false
+                            val replyTo = doc.getString("replyTo")
+                            @Suppress("UNCHECKED_CAST")
+                            val reactions = (doc.get("reactions") as? Map<String, String>) ?: emptyMap()
 
-                    if (!isGroup) {
-                        for (pChild in participantsSnapshot.children) {
-                            val pUid = pChild.key ?: ""
-                            if (pUid != currentUserId && pUid.isNotBlank()) {
-                                recipientId = pUid
-                                break
-                            }
+                            ChatMessage(
+                                msgId = msgId,
+                                chatId = chatId,
+                                senderId = senderId,
+                                senderName = senderName,
+                                text = text,
+                                time = time,
+                                timestamp = timestamp,
+                                isFromMe = (senderId == currentUserId),
+                                isRead = isRead,
+                                isEdited = isEdited,
+                                isDeleted = isDeleted,
+                                replyTo = replyTo,
+                                reactions = reactions
+                            )
                         }
-
-                        // Read metadata snapshot for recipient if stored in chat
-                        val recipientMeta = child.child("participant_meta").child(recipientId)
-                        recipientUsername = recipientMeta.child("username").getValue(String::class.java) ?: "User"
-                        recipientAvatarColor = recipientMeta.child("avatarColorHex").getValue(String::class.java) ?: "#00E5FF"
-                        recipientAvatarUrl = recipientMeta.child("avatarUrl").getValue(String::class.java) ?: ""
+                        localStore[chatId] = messages.toMutableList()
+                        trySend(messages)
+                    } else if (snapshot != null && snapshot.isEmpty) {
+                        val local = localStore[chatId] ?: emptyList()
+                        trySend(local)
                     }
-
-                    val participantsMap = mutableMapOf<String, Boolean>()
-                    for (pChild in participantsSnapshot.children) {
-                        val pKey = pChild.key ?: continue
-                        participantsMap[pKey] = pChild.getValue(Boolean::class.java) ?: true
-                    }
-
-                    chatList.add(
-                        ChatItem(
-                            id = chatId,
-                            isGroup = isGroup,
-                            chatName = if (isGroup) chatName else recipientUsername,
-                            recipientId = recipientId,
-                            recipientUsername = recipientUsername,
-                            recipientAvatarColor = recipientAvatarColor,
-                            recipientAvatarUrl = recipientAvatarUrl,
-                            lastMessage = displayLastMsg,
-                            lastMessageTimestamp = timestamp,
-                            unreadCount = unreadCount,
-                            isPinned = pinnedChatIds.contains(chatId),
-                            isArchived = archivedChatIds.contains(chatId),
-                            participants = participantsMap,
-                            pinnedMessageId = pinnedMsgId
-                        )
-                    )
                 }
 
-                // Sort: Pinned first, then by timestamp descending
-                val sortedList = chatList.sortedWith(
-                    compareByDescending<ChatItem> { it.isPinned }
-                        .thenByDescending { it.lastMessageTimestamp }
+                awaitClose {
+                    listenerRegistration.remove()
+                }
+            } else {
+                // Standalone / offline mode
+                awaitClose { }
+            }
+        }
+        .debounce(100L) // 🚀 ANTI-LAG: Mencegah jank saat ratusan pesan masuk per detik
+        .flowOn(Dispatchers.IO)
+    }
+
+    /**
+     * Mengirim pesan baru ke Firebase Firestore dan update metadata percakapan
+     */
+    suspend fun sendMessage(
+        chatId: String,
+        text: String,
+        currentUserId: String,
+        currentUserName: String,
+        replyTo: String? = null
+    ): Result<ChatMessage> = withContext(Dispatchers.IO) {
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val formattedTime = timeFormat.format(Date())
+        val msgId = "msg_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(6)}"
+
+        val newMessage = ChatMessage(
+            msgId = msgId,
+            chatId = chatId,
+            senderId = currentUserId,
+            senderName = currentUserName,
+            text = text.trim(),
+            time = formattedTime,
+            timestamp = System.currentTimeMillis(),
+            isFromMe = true,
+            isRead = false,
+            replyTo = replyTo
+        )
+
+        // Simpan ke local cache
+        val currentList = localStore.getOrPut(chatId) { mutableListOf() }
+        currentList.add(newMessage)
+
+        if (firestore != null) {
+            runCatching {
+                val messageMap = hashMapOf<String, Any>(
+                    "msgId" to msgId,
+                    "chatId" to chatId,
+                    "senderId" to currentUserId,
+                    "senderName" to currentUserName,
+                    "text" to text.trim(),
+                    "time" to formattedTime,
+                    "timestamp" to System.currentTimeMillis(),
+                    "isRead" to false,
+                    "isEdited" to false,
+                    "isDeleted" to false,
+                    "reactions" to emptyMap<String, String>()
                 )
-
-                // Save to local cache asynchronously
-                CoroutineScope(Dispatchers.IO).launch {
-                    localDatabase.saveCachedChats(sortedList)
+                if (replyTo != null) {
+                    messageMap["replyTo"] = replyTo
                 }
 
-                trySend(sortedList)
-            }
+                // Simpan ke Firestore
+                firestore.collection("chats")
+                    .document(chatId)
+                    .collection("messages")
+                    .document(msgId)
+                    .set(messageMap)
+                    .await()
 
-            override fun onCancelled(error: DatabaseError) {
-                trySend(localDatabase.getCachedChats())
-            }
-        }
-
-        chatsRef.addValueEventListener(chatsListener)
-
-        awaitClose {
-            chatsRef.removeEventListener(chatsListener)
-            userPrefsRef.removeEventListener(userPrefsListener)
-        }
-    }
-
-    /**
-     * Toggles Pinned status for a specific chat for the current user.
-     */
-    fun togglePinChat(userId: String, chatId: String, currentPinned: Boolean): Flow<Result<Boolean>> = flow {
-        try {
-            val newPinnedState = !currentPinned
-            firebaseDatabase.getReference("users")
-                .child(userId)
-                .child("pinnedChats")
-                .child(chatId)
-                .setValue(if (newPinnedState) true else null)
-                .await()
-            emit(Result.success(newPinnedState))
-        } catch (e: Exception) {
-            emit(Result.failure(e))
-        }
-    }
-
-    /**
-     * Toggles Archive status for a specific chat for the current user.
-     */
-    fun toggleArchiveChat(userId: String, chatId: String, currentArchived: Boolean): Flow<Result<Boolean>> = flow {
-        try {
-            val newArchivedState = !currentArchived
-            firebaseDatabase.getReference("users")
-                .child(userId)
-                .child("archivedChats")
-                .child(chatId)
-                .setValue(if (newArchivedState) true else null)
-                .await()
-            emit(Result.success(newArchivedState))
-        } catch (e: Exception) {
-            emit(Result.failure(e))
-        }
-    }
-
-    /**
-     * Deletes a chat from the user's active list (soft delete).
-     * The chat history remains preserved in Firebase Realtime Database.
-     */
-    fun deleteChatFromList(userId: String, chatId: String): Flow<Result<Boolean>> = flow {
-        try {
-            firebaseDatabase.getReference("users")
-                .child(userId)
-                .child("hiddenChats")
-                .child(chatId)
-                .setValue(true)
-                .await()
-            emit(Result.success(true))
-        } catch (e: Exception) {
-            emit(Result.failure(e))
-        }
-    }
-
-    /**
-     * Searches a contact by @username in Firebase (/usernames/{username} -> /users/{uid}).
-     */
-    fun searchContactByUsername(queryUsername: String): Flow<Result<User?>> = callbackFlow {
-        val sanitized = queryUsername.trim().lowercase().removePrefix("@")
-        if (sanitized.isBlank()) {
-            trySend(Result.success(null))
-            close()
-            return@callbackFlow
-        }
-
-        val usernameRef = firebaseDatabase.getReference("usernames").child(sanitized)
-        val listener = object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val targetUid = snapshot.getValue(String::class.java)
-                if (targetUid.isNullOrBlank()) {
-                    trySend(Result.success(null))
-                    close()
-                    return
-                }
-
-                // Query full user profile
-                val userRef = firebaseDatabase.getReference("users").child(targetUid)
-                userRef.addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(userSnapshot: DataSnapshot) {
-                        val user = userSnapshot.getValue(User::class.java)
-                        trySend(Result.success(user))
-                    }
-
-                    override fun onCancelled(error: DatabaseError) {
-                        trySend(Result.failure(Exception(error.message)))
-                    }
-                })
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                trySend(Result.failure(Exception(error.message)))
-            }
-        }
-
-        usernameRef.addListenerForSingleValueEvent(listener)
-        awaitClose { usernameRef.removeEventListener(listener) }
-    }
-
-    /**
-     * Creates or retrieves a direct 1-on-1 chat room with another user.
-     */
-    fun createOrGetDirectChat(currentUser: User, targetUser: User): Flow<Result<ChatItem>> = flow {
-        try {
-            // Deterministic Direct Chat ID: direct_uid1_uid2
-            val uids = listOf(currentUser.uid, targetUser.uid).sorted()
-            val chatId = "direct_${uids[0]}_${uids[1]}"
-
-            val chatRef = firebaseDatabase.getReference("chats").child(chatId)
-            val snapshot = chatRef.get().await()
-
-            if (!snapshot.exists()) {
-                val initialData = hashMapOf<String, Any>(
-                    "id" to chatId,
-                    "isGroup" to false,
-                    "chatName" to targetUser.username,
-                    "lastMessage" to MessageCrypto.encrypt("Halo! Mari mulai percakapan di Neont.", chatId),
-                    "lastMessageTimestamp" to System.currentTimeMillis(),
-                    "participants" to mapOf(
-                        currentUser.uid to true,
-                        targetUser.uid to true
-                    ),
-                    "participant_meta" to mapOf(
-                        currentUser.uid to mapOf(
-                            "username" to currentUser.username,
-                            "displayName" to currentUser.displayName,
-                            "avatarColorHex" to currentUser.avatarColorHex,
-                            "avatarUrl" to currentUser.avatarUrl
+                // Update metadata percakapan (lastMessage, lastUpdated)
+                firestore.collection("chats")
+                    .document(chatId)
+                    .set(
+                        mapOf(
+                            "lastMessage" to text.trim(),
+                            "lastUpdated" to System.currentTimeMillis(),
+                            "lastSenderId" to currentUserId
                         ),
-                        targetUser.uid to mapOf(
-                            "username" to targetUser.username,
-                            "displayName" to targetUser.displayName,
-                            "avatarColorHex" to targetUser.avatarColorHex,
-                            "avatarUrl" to targetUser.avatarUrl
-                        )
+                        com.google.firebase.firestore.SetOptions.merge()
                     )
-                )
-
-                chatRef.setValue(initialData).await()
+                    .await()
             }
-
-            // Unhide chat for both users in case it was previously deleted from list
-            val unhideUpdates = hashMapOf<String, Any?>(
-                "/users/${currentUser.uid}/hiddenChats/$chatId" to null,
-                "/users/${targetUser.uid}/hiddenChats/$chatId" to null
-            )
-            firebaseDatabase.reference.updateChildren(unhideUpdates).await()
-
-            val chatItem = ChatItem(
-                id = chatId,
-                isGroup = false,
-                chatName = targetUser.username,
-                recipientId = targetUser.uid,
-                recipientUsername = targetUser.username,
-                recipientAvatarColor = targetUser.avatarColorHex,
-                recipientAvatarUrl = targetUser.avatarUrl,
-                lastMessage = "Halo! Mari mulai percakapan di Neont.",
-                lastMessageTimestamp = System.currentTimeMillis(),
-                isPinned = false,
-                isArchived = false,
-                participants = mapOf(currentUser.uid to true, targetUser.uid to true)
-            )
-
-            emit(Result.success(chatItem))
-        } catch (e: Exception) {
-            emit(Result.failure(e))
         }
+
+        Result.success(newMessage)
+    }
+
+    /**
+     * Mengirim reaksi emoji (Long-press bubble) dan menyimpan ke Firebase
+     */
+    suspend fun sendReaction(
+        chatId: String,
+        msgId: String,
+        userId: String,
+        emoji: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        // Update local cache
+        val list = localStore[chatId]
+        if (list != null) {
+            val index = list.indexOfFirst { it.msgId == msgId }
+            if (index != -1) {
+                val target = list[index]
+                val currentReactions = target.reactions.toMutableMap()
+                if (currentReactions[userId] == emoji) {
+                    currentReactions.remove(userId) // Toggle off jika emoji sama
+                } else {
+                    currentReactions[userId] = emoji
+                }
+                list[index] = target.copy(reactions = currentReactions)
+            }
+        }
+
+        // Simpan ke Firestore
+        if (firestore != null) {
+            runCatching {
+                val docRef = firestore.collection("chats")
+                    .document(chatId)
+                    .collection("messages")
+                    .document(msgId)
+
+                docRef.update("reactions.$userId", emoji).await()
+            }
+        }
+
+        Result.success(Unit)
+    }
+
+    /**
+     * Menghapus pesan di Firestore (Soft delete atau hard delete)
+     */
+    suspend fun deleteMessage(
+        chatId: String,
+        msgId: String,
+        deleteForEveryone: Boolean = true
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        // Update local cache
+        val list = localStore[chatId]
+        if (list != null) {
+            val index = list.indexOfFirst { it.msgId == msgId }
+            if (index != -1) {
+                if (deleteForEveryone) {
+                    list[index] = list[index].copy(
+                        isDeleted = true,
+                        text = "🚫 Pesan ini telah dihapus"
+                    )
+                } else {
+                    list.removeAt(index)
+                }
+            }
+        }
+
+        // Update Firestore
+        if (firestore != null) {
+            runCatching {
+                val docRef = firestore.collection("chats")
+                    .document(chatId)
+                    .collection("messages")
+                    .document(msgId)
+
+                if (deleteForEveryone) {
+                    docRef.update(
+                        mapOf(
+                            "isDeleted" to true,
+                            "text" to "🚫 Pesan ini telah dihapus"
+                        )
+                    ).await()
+                } else {
+                    docRef.delete().await()
+                }
+            }
+        }
+
+        Result.success(Unit)
+    }
+
+    /**
+     * Mengedit pesan di Firestore
+     */
+    suspend fun editMessage(
+        chatId: String,
+        msgId: String,
+        newText: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        // Update local cache
+        val list = localStore[chatId]
+        if (list != null) {
+            val index = list.indexOfFirst { it.msgId == msgId }
+            if (index != -1) {
+                list[index] = list[index].copy(
+                    text = newText.trim(),
+                    isEdited = true
+                )
+            }
+        }
+
+        // Update Firestore
+        if (firestore != null) {
+            runCatching {
+                firestore.collection("chats")
+                    .document(chatId)
+                    .collection("messages")
+                    .document(msgId)
+                    .update(
+                        mapOf(
+                            "text" to newText.trim(),
+                            "isEdited" to true,
+                            "editedAt" to System.currentTimeMillis()
+                        )
+                    ).await()
+            }
+        }
+
+        Result.success(Unit)
     }
 }

@@ -4,21 +4,13 @@ import androidx.compose.runtime.Immutable
 
 @Immutable
 data class Song(
-    val id: String,
-    val title: String,
-    val artist: String,
-    val duration: String,
-    val albumCoverUrl: String,
-    val audioUrl: String,
-    val source: SongSource,
-    val externalUrl: String? = null,
-    val bitrate: String? = "320kbps",
-    val album: String? = null
+    val id: String = "",
+    val title: String = "",
+    val artist: String = "",
+    val album: String = "",
+    val albumArt: String = "",
+    val streamUrl: String = "",
+    val durationMs: Long = 0L,
+    val isLoved: Boolean = false,
+    val sourceApi: String = "Spotify"
 )
-
-enum class SongSource(val displayName: String, val badgeColorHex: Long) {
-    VERCEL("Vercel Music", 0xFF007AFF),
-    SPOTIFY_PLAY("Spotify Play", 0xFF1DB954),
-    YOUTUBE_PLAY("YouTube Music", 0xFFFF0000),
-    SPOTIFY_URL("Spotify Direct", 0xFF1ED760)
-}

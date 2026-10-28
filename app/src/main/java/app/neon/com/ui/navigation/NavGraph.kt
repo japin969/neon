@@ -366,26 +366,9 @@ fun NeontNavGraph(
             val recipientId = backStackEntry.arguments?.getString("recipientId") ?: ""
             val isGroup = backStackEntry.arguments?.getBoolean("isGroup") ?: false
             val chatName = backStackEntry.arguments?.getString("chatName") ?: ""
-            val detailViewModel: ChatDetailViewModel = hiltViewModel()
-
             ChatDetailScreen(
-                chatId = chatId,
-                recipientId = recipientId,
-                isGroup = isGroup,
-                chatName = chatName,
-                viewModel = detailViewModel,
-                onNavigateBack = {
-                    navigationActions.navigateBack()
-                },
-                onNavigateToGroupInfo = { groupId ->
-                    navigationActions.navigateToGroupInfo(groupId)
-                },
-                onStartAudioCall = { targetUid, targetName ->
-                    navigationActions.navigateToCall(targetUid, targetName, false)
-                },
-                onStartVideoCall = { targetUid, targetName ->
-                    navigationActions.navigateToCall(targetUid, targetName, true)
-                }
+                chatPartnerName = chatName,
+                onBackClick = { navigationActions.navigateBack() }
             )
         }
 

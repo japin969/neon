@@ -109,11 +109,8 @@ fun MainScreen(
         ) {
             when (currentTab) {
                 "chat" -> {
-                    val chatListViewModel: ChatListViewModel = hiltViewModel()
                     ChatListScreen(
-                        viewModel = chatListViewModel,
-                        onNavigateToChatDetail = onNavigateToChatDetail,
-                        onNavigateToCreateGroup = onNavigateToCreateGroup
+                        onChatClick = { chatId -> onNavigateToChatDetail(chatId, "", false, "") }
                     )
                 }
                 "music" -> {
