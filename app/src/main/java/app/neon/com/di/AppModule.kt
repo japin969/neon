@@ -2,6 +2,7 @@ package app.neon.com.di
 
 import android.content.Context
 import app.neon.com.data.local.FileDatabaseManager
+import app.neon.com.data.player.MusicController
 import app.neon.com.data.repository.AuthRepository
 import dagger.Module
 import dagger.Provides
@@ -61,9 +62,10 @@ object AppModule {
 
 
     @Provides
+    @Singleton
     fun provideWebRTCClient(
         @ApplicationContext context: Context
-    ): app.neon.com.data.webrtc.WebRtcClient {
-        return app.neon.com.data.webrtc.WebRtcClient(context)
+    ): app.neon.com.data.webrtc.WebRTCClient {
+        return app.neon.com.data.webrtc.WebRTCClient(context)
     }
 }
