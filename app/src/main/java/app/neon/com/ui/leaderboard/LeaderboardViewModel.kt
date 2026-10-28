@@ -6,13 +6,14 @@ import app.neon.com.data.model.LeaderboardEntry
 import app.neon.com.data.repository.SocialRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.timeout
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.timeout
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 data class LeaderboardUiState(
     val allEntries: List<LeaderboardEntry> = emptyList(),
@@ -39,26 +40,29 @@ class LeaderboardViewModel @Inject constructor(
     fun loadLeaderboard() {
         viewModelScope.launch {
             socialRepository.observeLeaderboard()
-                .timeout(5000)
+                .timeout(5.seconds)
                 .catch { e ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = e.localizedMessage) }
-            }.collect { entries ->
-                val top1 = entries.getOrNull(0)
-                val top2 = entries.getOrNull(1)
-                val top3 = entries.getOrNull(2)
-                val others = if (entries.size > 3) entries.subList(3, entries.size) else emptyList()
-
-                _uiState.update {
-                    it.copy(
-                        allEntries = entries,
-                        top1 = top1,
-                        top2 = top2,
-                        top3 = top3,
-                        otherEntries = others,
-                        isLoading = false
-                    )
+                    _uiState.update {
+                        it.copy(isLoading = false, errorMessage = e.localizedMessage)
+                    }
                 }
-            }
+                .collect { entries ->
+                    val top1 = entries.getOrNull(0)
+                    val top2 = entries.getOrNull(1)
+                    val top3 = entries.getOrNull(2)
+                    val others = if (entries.size > 3) entries.subList(3, entries.size) else emptyList()
+
+                    _uiState.update {
+                        it.copy(
+                            allEntries = entries,
+                            top1 = top1,
+                            top2 = top2,
+                            top3 = top3,
+                            otherEntries = others,
+                            isLoading = false
+                        )
+                    }
+                }
         }
     }
 }

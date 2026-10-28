@@ -278,12 +278,9 @@ fun NeontNavGraph(
 
         // 2. Layar Login (TAHAP 2)
         composable(Screen.Login.route) {
-            val loginViewModel: LoginViewModel = hiltViewModel()
+            val authViewModel: app.neon.com.ui.viewmodel.AuthViewModel = hiltViewModel()
             LoginScreen(
-                viewModel = loginViewModel,
-                onNavigateToRegister = {
-                    navigationActions.navigateToRegister()
-                },
+                authViewModel = authViewModel,
                 onLoginSuccess = {
                     navigationActions.navigateToMain("chat")
                 }
@@ -417,11 +414,11 @@ fun NeontNavGraph(
             val callViewModel: CallViewModel = hiltViewModel()
 
             CallScreen(
-                targetUserId = targetUserId,
-                targetUserName = targetUserName,
-                isVideo = isVideo,
-                viewModel = callViewModel,
-                onCallEnded = { navigationActions.navigateBack() }
+                callViewModel = callViewModel,
+                chatId = "chat_aura",
+                contactName = "Aura Cantika",
+                isVideoCall = false,
+                onEndCallClick = { navigationActions.navigateBack() }
             )
         }
 

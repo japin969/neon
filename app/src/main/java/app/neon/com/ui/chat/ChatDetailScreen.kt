@@ -507,21 +507,12 @@ fun ChatDetailScreen(
                         messageToEdit = null
                     }
                 ) {
-                    Text(
-                        "Simpan",
-                        fontFamily = InterFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        color = GhButtonPrimary
-                    )
+                    Text("Simpan", fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, color = GhButtonPrimary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { messageToEdit = null }) {
-                    Text(
-                        "Batal",
-                        fontFamily = InterFontFamily,
-                        color = GhTextSecondary
-                    )
+                    Text("Batal", fontFamily = InterFontFamily, color = GhTextSecondary)
                 }
             },
             containerColor = GhSurface
@@ -557,21 +548,12 @@ fun ChatDetailScreen(
                         messageToDeleteId = null
                     }
                 ) {
-                    Text(
-                        "Hapus",
-                        fontFamily = InterFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFFF453A)
-                    )
+                    Text("Hapus", fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, color = Color(0xFFFF453A))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { messageToDeleteId = null }) {
-                    Text(
-                        "Batal",
-                        fontFamily = InterFontFamily,
-                        color = GhTextSecondary
-                    )
+                    Text("Batal", fontFamily = InterFontFamily, color = GhTextSecondary)
                 }
             },
             containerColor = GhSurface

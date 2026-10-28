@@ -2,7 +2,7 @@ package app.neon.com.data.repository
 
 import app.neon.com.data.model.ChatItem
 import app.neon.com.data.model.ChatMessage
-import com.google.firebase.firestore.FieldValue
+import app.neon.com.data.model.User
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.Dispatchers
@@ -326,12 +326,14 @@ class ChatRepository {
             val ref = com.google.firebase.database.FirebaseDatabase.getInstance()
                 .getReference("usernames")
                 .child(query.lowercase().trim())
+
             ref.get().await().let { snapshot ->
                 val uid = snapshot.getValue(String::class.java)
                 if (uid != null) {
                     val userRef = com.google.firebase.database.FirebaseDatabase.getInstance()
                         .getReference("users")
                         .child(uid)
+
                     userRef.get().await().let { userSnap ->
                         val user = userSnap.getValue(User::class.java)
                         emit(Result.success(user))

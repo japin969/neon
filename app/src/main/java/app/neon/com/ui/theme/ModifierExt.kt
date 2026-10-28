@@ -24,7 +24,7 @@ fun Modifier.bouncyClickable(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
         ),
-        label = "bouncyClickScale"
+        label = "bouncyClickable"
     )
 
     return this

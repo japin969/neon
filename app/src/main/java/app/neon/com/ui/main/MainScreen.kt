@@ -3,6 +3,8 @@ package app.neon.com.ui.main
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,21 +23,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import app.neon.com.ui.chat.ChatListScreen
-import app.neon.com.ui.chat.ChatListViewModel
 import app.neon.com.ui.leaderboard.LeaderboardScreen
 import app.neon.com.ui.leaderboard.LeaderboardViewModel
 import app.neon.com.ui.music.MusicHomeScreen
 import app.neon.com.ui.music.MusicViewModel
 import app.neon.com.ui.profile.ProfileScreen
 import app.neon.com.ui.profile.ProfileViewModel
-import app.neon.com.ui.navigation.BottomNavItem
 import app.neon.com.ui.navigation.bottomNavItems
 
 @Composable
@@ -114,9 +114,9 @@ fun MainScreen(
                     )
                 }
                 "music" -> {
+                    val musicViewModel: MusicViewModel = hiltViewModel()
                     MusicHomeScreen(
-                        repository = app.neon.com.data.repository.MusicRepository(),
-                        currentUserId = "user_neont_guest"
+                        musicViewModel = musicViewModel
                     )
                 }
                 "leaderboard" -> {
@@ -144,7 +144,7 @@ private fun TabPlaceholder(title: String, subtitle: String) {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        androidx.compose.foundation.layout.Column(
+        Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(24.dp)
         ) {
@@ -154,12 +154,12 @@ private fun TabPlaceholder(title: String, subtitle: String) {
                 fontWeight = FontWeight.Bold,
                 color = Color.White
             )
-            androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = subtitle,
                 fontSize = 14.sp,
                 color = Color(0xFF888EA8),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
             )
         }
     }

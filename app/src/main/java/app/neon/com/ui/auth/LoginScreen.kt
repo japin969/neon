@@ -5,7 +5,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -45,21 +44,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.neon.com.ui.chat.bouncyClickable
 import app.neon.com.ui.theme.GhBackground
-import app.neon.com.ui.theme.bouncyClickable
 import app.neon.com.ui.theme.GhBorder
 import app.neon.com.ui.theme.GhButtonPrimary
 import app.neon.com.ui.theme.GhSurface
 import app.neon.com.ui.theme.GhTextPrimary
 import app.neon.com.ui.theme.GhTextSecondary
 import app.neon.com.ui.theme.InterFontFamily
+import app.neon.com.ui.theme.bouncyClickable
 import app.neon.com.ui.viewmodel.AuthViewModel
 
-/**
- * LoginScreen - Halaman Masuk iOS WhatsApp / Neon Style
- * Menghubungkan tombol ke AuthViewModel
- */
 @Composable
 fun LoginScreen(
     authViewModel: AuthViewModel,
@@ -83,7 +77,6 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Logo / Icon
         Box(
             modifier = Modifier
                 .size(72.dp)
@@ -121,7 +114,6 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Email Field
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -144,7 +136,6 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Password Field
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -179,7 +170,6 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Tombol Masuk
         Button(
             onClick = {
                 authViewModel.signInWithEmail(email, password)
@@ -213,7 +203,6 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Tombol Masuk Demo / Anonymous
         TextButton(
             onClick = { authViewModel.signInAnonymously() },
             modifier = Modifier.fillMaxWidth()

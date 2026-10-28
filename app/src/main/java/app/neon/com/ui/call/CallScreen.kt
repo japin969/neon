@@ -47,28 +47,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.neon.com.data.webrtc.CallConnectionState
-import app.neon.com.ui.chat.bouncyClickable
 import app.neon.com.ui.theme.GhBorder
-import app.neon.com.ui.theme.bouncyClickable
 import app.neon.com.ui.theme.GhCallEndRed
 import app.neon.com.ui.theme.GhSurface
 import app.neon.com.ui.theme.GhTextPrimary
 import app.neon.com.ui.theme.GhTextSecondary
 import app.neon.com.ui.theme.InterFontFamily
+import app.neon.com.ui.theme.bouncyClickable
 import app.neon.com.ui.viewmodel.CallViewModel
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 
-/**
- * CallScreen - WhatsApp iPhone (iOS) Voice & Video Call:
- * - Terhubung langsung ke WebRtcClient via CallViewModel:
- *   1. Tombol End Call: memanggil webrtcClient.close() dan onEndCallClick()
- *   2. Tombol Mute: memanggil webrtcClient.toggleAudio() (ikon berubah secara reaktif)
- *   3. Tombol Video: memanggil webrtcClient.toggleVideo()
- *   4. Tombol Speaker: memanggil webrtcClient.toggleSpeaker()
- *   5. Tombol Switch Camera: memanggil webrtcClient.switchCamera()
- */
 @Composable
 fun CallScreen(
     callViewModel: CallViewModel,
@@ -96,9 +86,6 @@ fun CallScreen(
             .fillMaxSize()
             .background(Color(0xFF0D1117))
     ) {
-        // ==========================================
-        // 1. Background: Foto Profil Blur di Tengah
-        // ==========================================
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(contactAvatarUrl)
@@ -112,16 +99,12 @@ fun CallScreen(
                 .blur(radius = 35.dp)
         )
 
-        // Overlay Gelap agar Kontras Teks dan Tombol Sangat Jelas
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFF0D1117).copy(alpha = 0.78f))
         )
 
-        // ==========================================
-        // 2. Konten Panggilan: Avatar, Nama, Status
-        // ==========================================
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -132,7 +115,6 @@ fun CallScreen(
         ) {
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Avatar: Bulat Besar 120dp di Tengah Atas
             Box(
                 modifier = Modifier
                     .size(120.dp)
@@ -155,7 +137,6 @@ fun CallScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Nama: Inter Bold 24sp
             Text(
                 text = contactName,
                 fontFamily = InterFontFamily,
@@ -166,7 +147,6 @@ fun CallScreen(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Status Koneksi & Durasi
             val statusText = when (connectionState) {
                 CallConnectionState.CONNECTING -> "Menghubungkan..."
                 CallConnectionState.CONNECTED -> {
@@ -186,9 +166,6 @@ fun CallScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // ==========================================
-            // 3. Tombol Kontrol Panggilan (WebRTC Berfungsi Nyata)
-            // ==========================================
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -196,7 +173,6 @@ fun CallScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Tombol Mute: Memanggil webrtcClient.toggleAudio()
                 Box(
                     modifier = Modifier
                         .size(56.dp)
@@ -214,7 +190,6 @@ fun CallScreen(
                     )
                 }
 
-                // Tombol Video: Memanggil webrtcClient.toggleVideo()
                 Box(
                     modifier = Modifier
                         .size(56.dp)
@@ -232,7 +207,6 @@ fun CallScreen(
                     )
                 }
 
-                // Tombol Speaker: Memanggil webrtcClient.toggleSpeaker()
                 Box(
                     modifier = Modifier
                         .size(56.dp)
@@ -250,7 +224,6 @@ fun CallScreen(
                     )
                 }
 
-                // Tombol End Call: Memanggil webrtcClient.close() dan navController.popBackStack()
                 Box(
                     modifier = Modifier
                         .size(64.dp)
@@ -272,9 +245,6 @@ fun CallScreen(
             }
         }
 
-        // ==========================================
-        // 4. Video Lokal (PiP) di Pojok Kanan Atas
-        // ==========================================
         AnimatedVisibility(
             visible = isVideoEnabled,
             enter = fadeIn(),
@@ -292,18 +262,17 @@ fun CallScreen(
                     .border(1.5.dp, GhBorder, RoundedCornerShape(12.dp))
                     .background(GhSurface)
             ) {
-                // Kamera Lokal (Self Video Preview)
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(if (isFrontCamera) "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80" else "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&q=80")
                         .crossfade(true)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
                         .build(),
                     contentDescription = "Self Video PiP",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // Tombol Flip Kamera
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
