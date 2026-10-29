@@ -51,8 +51,7 @@ import app.neon.com.ui.group.GroupViewModel
 import app.neon.com.ui.main.MainScreen
 import app.neon.com.ui.video.VideoPlayerScreen
 import app.neon.com.ui.music.MusicPlayerScreen
-import app.neon.com.ui.video.VideoPlayerScreen
-import app.neon.com.ui.music.MusicViewModel
+import app.neon.com.ui.viewmodel.MusicViewModel
 import app.neon.com.ui.profile.DevicesSettingsScreen
 import app.neon.com.ui.profile.EditProfileScreen
 import app.neon.com.ui.profile.FollowListScreen

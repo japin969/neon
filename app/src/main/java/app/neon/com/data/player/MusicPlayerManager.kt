@@ -28,6 +28,9 @@ class MusicPlayerManager(private val context: Context) {
     private val _currentSong = MutableStateFlow<Song?>(null)
     val currentSong: StateFlow<Song?> = _currentSong.asStateFlow()
 
+    private var playlist: List<Song> = emptyList()
+    private var currentIndex: Int = -1
+
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
@@ -82,7 +85,11 @@ class MusicPlayerManager(private val context: Context) {
     /**
      * Memutar lagu dengan ExoPlayer
      */
-    fun playSong(song: Song) {
+    fun playSong(song: Song, newPlaylist: List<Song> = emptyList()) {
+        if (newPlaylist.isNotEmpty()) {
+            playlist = newPlaylist
+            currentIndex = newPlaylist.indexOfFirst { it.id == song.id }
+        }
         _currentSong.value = song
         val player = exoPlayer ?: return
 
@@ -95,6 +102,18 @@ class MusicPlayerManager(private val context: Context) {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    fun previous() {
+        if (playlist.isEmpty()) return
+        currentIndex = if (currentIndex > 0) currentIndex - 1 else playlist.size - 1
+        playSong(playlist[currentIndex], playlist)
+    }
+
+    fun next() {
+        if (playlist.isEmpty()) return
+        currentIndex = if (currentIndex < playlist.size - 1) currentIndex + 1 else 0
+        playSong(playlist[currentIndex], playlist)
     }
 
     /**

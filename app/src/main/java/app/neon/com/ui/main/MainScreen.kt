@@ -33,10 +33,10 @@ import app.neon.com.ui.chat.ChatListScreen
 import app.neon.com.ui.leaderboard.LeaderboardScreen
 import app.neon.com.ui.leaderboard.LeaderboardViewModel
 import app.neon.com.ui.music.MusicHomeScreen
-import app.neon.com.ui.music.MusicViewModel
 import app.neon.com.ui.profile.ProfileScreen
 import app.neon.com.ui.profile.ProfileViewModel
 import app.neon.com.ui.navigation.bottomNavItems
+import app.neon.com.ui.viewmodel.MusicViewModel
 
 @Composable
 fun MainScreen(

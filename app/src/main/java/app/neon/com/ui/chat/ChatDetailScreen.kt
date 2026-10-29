@@ -247,7 +247,10 @@ fun ChatDetailScreen(
                     }
                 }
 
-                items(items = pagedMessages, key = { it.msgId }) { msg ->
+                items(
+                    items = pagedMessages,
+                    key = { it.msgId }
+                ) { msg ->
                     ChatBubbleItem(message = msg)
                 }
             }
@@ -320,7 +323,10 @@ fun ChatDetailScreen(
                             maxLines = 1
                         )
                     }
-                    IconButton(onClick = { chatViewModel.setReplyMessage(null) }, modifier = Modifier.size(28.dp)) {
+                    IconButton(
+                        onClick = { chatViewModel.setReplyMessage(null) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close reply",
