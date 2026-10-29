@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -50,14 +49,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.neon.com.ui.theme.GhAccentGreen
-import app.neon.com.ui.theme.bouncyClickable
-import app.neon.com.ui.theme.GhBackground
-import app.neon.com.ui.theme.GhBorder
 import app.neon.com.ui.theme.GhButtonPrimary
-import app.neon.com.ui.theme.GhSurface
-import app.neon.com.ui.theme.GhTextPrimary
-import app.neon.com.ui.theme.GhTextSecondary
 import app.neon.com.ui.theme.InterFontFamily
+import app.neon.com.ui.theme.bouncyClickable
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
@@ -73,16 +67,6 @@ data class ChatItem(
     val isOnline: Boolean = false
 )
 
-/**
- * ChatListScreen - WhatsApp iPhone (iOS):
- * - Warna: GhBackground (#0D1117), GhSurface (#161B22), GhBorder (#30363D), GhTextPrimary (#F0F6FC)
- * - Header: "Chats" (Inter Bold 34sp)
- * - Item Chat: Surface RoundedCornerShape(12.dp) + border GhBorder
- * - Nama: Inter SemiBold 17sp
- * - Preview: Inter 15sp GhTextSecondary
- * - LazyColumn WAJIB pakai parameter key unik (Anti-Lag)
- * - Animasi: bouncyClickable
- */
 @Composable
 fun ChatListScreen(
     onChatClick: (chatId: String) -> Unit = {},
@@ -134,29 +118,18 @@ fun ChatListScreen(
     }
 
     val filteredChats = remember(searchQuery, initialChats) {
-        if (searchQuery.trim().isEmpty()) {
-            initialChats
-        } else {
-            initialChats.filter {
-                it.name.contains(searchQuery, ignoreCase = true) ||
+        if (searchQuery.isBlank()) initialChats
+        else initialChats.filter {
+            it.name.contains(searchQuery, ignoreCase = true) ||
                 it.lastMessage.contains(searchQuery, ignoreCase = true)
-            }
         }
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(GhBackground)
-            .statusBarsPadding()
+        modifier = Modifier.fillMaxSize().background(Color(0xFFF2F2F7)).statusBarsPadding()
     ) {
-        // ==========================================
-        // 🍎 Header "Chats" (Inter Bold 34sp)
-        // ==========================================
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth().background(Color(0xFFF2F2F7)).padding(horizontal = 18.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -165,78 +138,61 @@ fun ChatListScreen(
                 fontFamily = InterFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 34.sp,
-                letterSpacing = 0.37.sp,
-                color = GhTextPrimary
+                color = Color(0xFF111827)
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Tombol Buka Pemutar Musik (ExoPlayer)
                 Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(GhSurface)
-                        .border(0.5.dp, GhBorder, CircleShape)
+                    modifier = Modifier.size(38.dp).clip(CircleShape).background(Color(0xFFE8EDF2))
+                        .border(0.5.dp, Color(0xFFE3E8EF), CircleShape)
                         .bouncyClickable(onClick = onNavigateToMusic),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.MusicNote,
                         contentDescription = "Music",
-                        tint = GhButtonPrimary,
-                        modifier = Modifier.size(19.dp)
+                        tint = Color(0xFF1F2328),
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Tombol Logout Firebase Auth
                 Box(
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(CircleShape)
-                        .background(GhSurface)
-                        .border(0.5.dp, GhBorder, CircleShape)
+                    modifier = Modifier.size(38.dp).clip(CircleShape).background(Color(0xFFE8EDF2))
+                        .border(0.5.dp, Color(0xFFE3E8EF), CircleShape)
                         .bouncyClickable(onClick = onLogoutClick),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Logout,
                         contentDescription = "Logout",
-                        tint = GhTextSecondary,
+                        tint = Color(0xFF1F2328),
                         modifier = Modifier.size(18.dp)
                     )
                 }
             }
         }
 
-        // Search Bar WhatsApp iOS
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-        ) {
+        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
             TextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(46.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .border(0.5.dp, GhBorder, RoundedCornerShape(12.dp)),
+                modifier = Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(12.dp))
+                    .border(0.5.dp, Color(0xFFE4E7EC), RoundedCornerShape(12.dp)),
                 placeholder = {
                     Text(
                         text = "Cari percakapan...",
                         fontFamily = InterFontFamily,
                         fontSize = 15.sp,
-                        color = GhTextSecondary
+                        color = Color(0xFF98A2B3)
                     )
                 },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Search",
-                        tint = GhTextSecondary,
+                        tint = Color(0xFF98A2B3),
                         modifier = Modifier.size(18.dp)
                     )
                 },
@@ -246,7 +202,7 @@ fun ChatListScreen(
                             Icon(
                                 imageVector = Icons.Default.Clear,
                                 contentDescription = "Clear",
-                                tint = GhTextSecondary,
+                                tint = Color(0xFF98A2B3),
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -254,106 +210,69 @@ fun ChatListScreen(
                 },
                 singleLine = true,
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = GhSurface,
-                    unfocusedContainerColor = GhSurface,
-                    disabledContainerColor = GhSurface,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = GhTextPrimary,
-                    unfocusedTextColor = GhTextPrimary
+                    focusedTextColor = Color(0xFF111827),
+                    unfocusedTextColor = Color(0xFF111827)
                 )
             )
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // ==========================================
-        // 💬 LazyColumn WAJIB pakai key unik (Anti-Lag)
-        // ==========================================
         LazyColumn(
             state = listState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            items(
-                items = filteredChats,
-                key = { it.id } // WAJIB KEY UNIK
-            ) { chat ->
-                ChatConversationItem(
-                    chat = chat,
-                    onClick = { onChatClick(chat.id) }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+            items(filteredChats, key = { it.id }) { chat ->
+                ChatConversationItem(chat = chat, onClick = { onChatClick(chat.id) })
+                Spacer(modifier = Modifier.height(10.dp))
             }
         }
     }
 }
 
-/**
- * Item Chat: Surface RoundedCornerShape(12.dp) + border GhBorder
- */
 @Composable
-fun ChatConversationItem(
+private fun ChatConversationItem(
     chat: ChatItem,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
 
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .border(width = 0.5.dp, color = GhBorder, shape = RoundedCornerShape(12.dp))
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+            .border(0.5.dp, Color(0xFFE4E7EC), RoundedCornerShape(12.dp))
             .bouncyClickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        color = GhSurface,
-        tonalElevation = 2.dp
+        color = Color.White,
+        tonalElevation = 0.dp
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar Bulat dengan Cache Memory Coil
             Box {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
-                        .data(chat.avatarUrl)
-                        .crossfade(true)
-                        .memoryCachePolicy(CachePolicy.ENABLED)
-                        .build(),
+                        .data(chat.avatarUrl).crossfade(true).memoryCachePolicy(CachePolicy.ENABLED).build(),
                     contentDescription = chat.name,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .border(0.5.dp, GhBorder, CircleShape)
-                        .background(GhBackground)
+                    modifier = Modifier.size(52.dp).clip(CircleShape).background(Color(0xFFE8EDF2))
                 )
 
                 if (chat.isOnline) {
                     Box(
-                        modifier = Modifier
-                            .size(14.dp)
-                            .clip(CircleShape)
-                            .background(GhSurface)
-                            .padding(2.dp)
-                            .align(Alignment.BottomEnd)
+                        modifier = Modifier.size(11.dp).clip(CircleShape).background(Color.White)
+                            .padding(1.5.dp).align(Alignment.BottomEnd)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape)
-                                .background(GhAccentGreen)
-                        )
+                        Box(modifier = Modifier.fillMaxSize().clip(CircleShape).background(GhAccentGreen))
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(
@@ -361,38 +280,35 @@ fun ChatConversationItem(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Nama: Inter SemiBold 17sp
                     Text(
                         text = chat.name,
                         fontFamily = InterFontFamily,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
-                        color = GhTextPrimary,
+                        color = Color(0xFF1F2328),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+
                     Text(
                         text = chat.time,
                         fontFamily = InterFontFamily,
                         fontSize = 12.sp,
-                        color = if (chat.unreadCount > 0) GhButtonPrimary else GhTextSecondary
+                        color = if (chat.unreadCount > 0) GhButtonPrimary else Color(0xFF8A8F98)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(3.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Preview: Inter 15sp (GhTextSecondary)
                     Text(
                         text = chat.lastMessage,
                         fontFamily = InterFontFamily,
-                        fontWeight = if (chat.unreadCount > 0) FontWeight.Medium else FontWeight.Normal,
                         fontSize = 15.sp,
-                        color = if (chat.unreadCount > 0) GhTextPrimary else GhTextSecondary,
+                        color = if (chat.unreadCount > 0) Color(0xFF1F2328) else Color(0xFF5D6470),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
@@ -401,10 +317,7 @@ fun ChatConversationItem(
                     if (chat.unreadCount > 0) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Box(
-                            modifier = Modifier
-                                .size(20.dp)
-                                .clip(CircleShape)
-                                .background(GhButtonPrimary),
+                            modifier = Modifier.size(20.dp).clip(CircleShape).background(GhButtonPrimary),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(

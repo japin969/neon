@@ -1,11 +1,13 @@
 package app.neon.com.ui.chat
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -32,17 +35,13 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -67,12 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.neon.com.data.model.ChatMessage
 import app.neon.com.ui.theme.GhAccentGreen
-import app.neon.com.ui.theme.GhBackground
-import app.neon.com.ui.theme.GhBorder
 import app.neon.com.ui.theme.GhButtonPrimary
-import app.neon.com.ui.theme.GhSurface
-import app.neon.com.ui.theme.GhTextPrimary
-import app.neon.com.ui.theme.GhTextSecondary
 import app.neon.com.ui.theme.InterFontFamily
 import app.neon.com.ui.viewmodel.ChatViewModel
 import coil.compose.AsyncImage
@@ -95,11 +89,6 @@ fun ChatDetailScreen(
 
     var inputText by remember { mutableStateOf("") }
     var currentLimit by remember { mutableIntStateOf(50) }
-
-    var messageToEdit by remember { mutableStateOf<ChatMessage?>(null) }
-    var editTextValue by remember { mutableStateOf("") }
-
-    var messageToDeleteId by remember { mutableStateOf<String?>(null) }
 
     val replyMessage by chatViewModel.replyMessage.collectAsState()
     val allMessages by chatViewModel.messages.collectAsState()
@@ -135,7 +124,6 @@ fun ChatDetailScreen(
         val textToSend = inputText.trim()
         chatViewModel.sendMessage(chatId, textToSend)
         inputText = ""
-
         scope.launch {
             if (pagedMessages.isNotEmpty()) {
                 listState.animateScrollToItem(pagedMessages.size - 1)
@@ -146,23 +134,22 @@ fun ChatDetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(GhBackground)
+            .background(Color(0xFFE5DDD5))
             .statusBarsPadding()
             .imePadding()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(GhSurface)
-                .border(0.5.dp, GhBorder)
-                .padding(horizontal = 6.dp, vertical = 8.dp),
+                .background(Color(0xFFE5DDD5))
+                .padding(horizontal = 10.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Kembali",
-                    tint = GhButtonPrimary
+                    contentDescription = "Back",
+                    tint = Color(0xFF1F2328)
                 )
             }
 
@@ -176,27 +163,18 @@ fun ChatDetailScreen(
                     contentDescription = chatPartnerName,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
-                        .border(0.5.dp, GhBorder, CircleShape)
-                        .background(GhBackground)
+                        .border(0.5.dp, Color(0xFFCBD5D1), CircleShape)
                 )
 
                 Box(
                     modifier = Modifier
                         .size(10.dp)
                         .clip(CircleShape)
-                        .background(GhSurface)
-                        .padding(1.5.dp)
+                        .background(GhAccentGreen)
                         .align(Alignment.BottomEnd)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape)
-                            .background(GhAccentGreen)
-                    )
-                }
+                )
             }
 
             Spacer(modifier = Modifier.width(10.dp))
@@ -205,39 +183,33 @@ fun ChatDetailScreen(
                 Text(
                     text = chatPartnerName,
                     fontFamily = InterFontFamily,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 17.sp,
-                    color = GhTextPrimary
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF1F2328)
                 )
                 Text(
                     text = "online",
                     fontFamily = InterFontFamily,
                     fontSize = 12.sp,
-                    color = GhTextSecondary
+                    color = Color(0xFF667085)
                 )
             }
 
-            IconButton(
-                onClick = { onCallClick(true) },
-                modifier = Modifier.size(36.dp)
-            ) {
+            IconButton(onClick = { onCallClick(true) }, modifier = Modifier.size(36.dp)) {
                 Icon(
                     imageVector = Icons.Default.Videocam,
-                    contentDescription = "Video Call",
-                    tint = GhButtonPrimary,
+                    contentDescription = "Video",
+                    tint = Color(0xFF1F2328),
                     modifier = Modifier.size(22.dp)
                 )
             }
 
-            IconButton(
-                onClick = { onCallClick(false) },
-                modifier = Modifier.size(36.dp)
-            ) {
+            IconButton(onClick = { onCallClick(false) }, modifier = Modifier.size(36.dp)) {
                 Icon(
                     imageVector = Icons.Default.Phone,
-                    contentDescription = "Voice Call",
-                    tint = GhButtonPrimary,
-                    modifier = Modifier.size(20.dp)
+                    contentDescription = "Call",
+                    tint = Color(0xFF1F2328),
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
@@ -250,7 +222,7 @@ fun ChatDetailScreen(
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
             ) {
                 if (allMessages.size > currentLimit) {
                     item(key = "load_more_paging_header") {
@@ -267,7 +239,7 @@ fun ChatDetailScreen(
                                 color = GhButtonPrimary,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(GhSurface)
+                                    .background(Color(0xFFF8FAFC))
                                     .clickable { currentLimit += 50 }
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                             )
@@ -275,47 +247,26 @@ fun ChatDetailScreen(
                     }
                 }
 
-                items(
-                    items = pagedMessages,
-                    key = { it.msgId }
-                ) { msg ->
-                    MessageBubble(
-                        message = msg,
-                        onReactionClick = { msgId, emoji ->
-                            chatViewModel.sendReaction(chatId, msgId, emoji)
-                        },
-                        onDeleteClick = { msgId ->
-                            messageToDeleteId = msgId
-                        },
-                        onEditClick = { targetMsg ->
-                            messageToEdit = targetMsg
-                            editTextValue = targetMsg.text
-                        },
-                        onReplyClick = { targetMsg ->
-                            chatViewModel.setReplyMessage(targetMsg)
-                        },
-                        onForwardClick = { targetMsg ->
-                            chatViewModel.sendMessage(chatId, "Forwarded: ${targetMsg.text}")
-                        }
-                    )
+                items(items = pagedMessages, key = { it.msgId }) { msg ->
+                    ChatBubbleItem(message = msg)
                 }
             }
 
             AnimatedVisibility(
                 visible = isUserScrolledUp,
-                enter = fadeIn(),
-                exit = fadeOut(),
+                enter = fadeIn(animationSpec = tween(220)),
+                exit = fadeOut(animationSpec = tween(180)),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(40.dp)
                         .shadow(4.dp, CircleShape)
                         .clip(CircleShape)
-                        .background(GhSurface)
-                        .border(0.5.dp, GhBorder, CircleShape)
+                        .background(Color.White)
+                        .border(1.dp, Color(0xFFE4E7EC), CircleShape)
                         .clickable {
                             scope.launch {
                                 listState.animateScrollToItem(pagedMessages.size - 1)
@@ -325,9 +276,9 @@ fun ChatDetailScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Scroll to Bottom",
-                        tint = GhTextPrimary,
-                        modifier = Modifier.size(20.dp)
+                        contentDescription = "Scroll to bottom",
+                        tint = Color(0xFF1F2328),
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -342,16 +293,15 @@ fun ChatDetailScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(GhSurface)
-                        .border(0.5.dp, GhBorder)
-                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                        .background(Color(0xFFEDF2F7))
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .width(3.dp)
+                            .width(4.dp)
                             .height(28.dp)
-                            .background(GhButtonPrimary, RoundedCornerShape(2.dp))
+                            .background(GhButtonPrimary, RoundedCornerShape(4.dp))
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(1f)) {
@@ -365,19 +315,16 @@ fun ChatDetailScreen(
                         Text(
                             text = reply.text,
                             fontFamily = InterFontFamily,
-                            fontSize = 13.sp,
-                            color = GhTextPrimary,
+                            fontSize = 12.sp,
+                            color = Color(0xFF374151),
                             maxLines = 1
                         )
                     }
-                    IconButton(
-                        onClick = { chatViewModel.setReplyMessage(null) },
-                        modifier = Modifier.size(28.dp)
-                    ) {
+                    IconButton(onClick = { chatViewModel.setReplyMessage(null) }, modifier = Modifier.size(28.dp)) {
                         Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Tutup Balasan",
-                            tint = GhTextSecondary,
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close reply",
+                            tint = Color(0xFF6B7280),
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -388,21 +335,17 @@ fun ChatDetailScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(GhSurface)
-                .border(0.5.dp, GhBorder)
+                .background(Color(0xFFF7F7F7))
                 .navigationBarsPadding()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = { },
-                modifier = Modifier.size(36.dp)
-            ) {
+            IconButton(onClick = { }, modifier = Modifier.size(36.dp)) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Lampirkan",
-                    tint = GhButtonPrimary,
-                    modifier = Modifier.size(24.dp)
+                    contentDescription = "Add",
+                    tint = Color(0xFF1F2328),
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
@@ -410,16 +353,16 @@ fun ChatDetailScreen(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(GhBackground)
-                    .border(0.5.dp, GhBorder, RoundedCornerShape(20.dp))
-                    .padding(horizontal = 14.dp, vertical = 9.dp)
+                    .background(Color.White)
+                    .border(0.5.dp, Color(0xFFD7DCE2), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
                 if (inputText.isEmpty()) {
                     Text(
-                        text = "iMessage...",
+                        text = "Ketik pesan",
                         fontFamily = InterFontFamily,
                         fontSize = 15.sp,
-                        color = GhTextSecondary
+                        color = Color(0xFF98A2B3)
                     )
                 }
                 BasicTextField(
@@ -428,7 +371,7 @@ fun ChatDetailScreen(
                     textStyle = TextStyle(
                         fontFamily = InterFontFamily,
                         fontSize = 15.sp,
-                        color = GhTextPrimary
+                        color = Color(0xFF1F2328)
                     ),
                     cursorBrush = SolidColor(GhButtonPrimary),
                     modifier = Modifier.fillMaxWidth(),
@@ -438,125 +381,127 @@ fun ChatDetailScreen(
 
             Spacer(modifier = Modifier.width(6.dp))
 
-            IconButton(
-                onClick = { },
-                modifier = Modifier.size(34.dp)
-            ) {
+            IconButton(onClick = { }, modifier = Modifier.size(34.dp)) {
                 Icon(
                     imageVector = Icons.Default.CameraAlt,
-                    contentDescription = "Kamera",
-                    tint = GhTextSecondary,
+                    contentDescription = "Camera",
+                    tint = Color(0xFF1F2328),
                     modifier = Modifier.size(20.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(2.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(40.dp)
                     .clip(CircleShape)
-                    .background(if (canSend) GhButtonPrimary else GhBorder)
+                    .background(if (canSend) Color(0xFF25D366) else Color(0xFFBFC9D1))
                     .clickable { performSendMessage() },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Kirim",
-                    tint = if (canSend) Color.White else GhTextSecondary,
-                    modifier = Modifier.size(17.dp)
+                    contentDescription = "Send",
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
     }
+}
 
-    if (messageToEdit != null) {
-        AlertDialog(
-            onDismissRequest = { messageToEdit = null },
-            title = {
-                Text(
-                    text = "Edit Pesan",
-                    fontFamily = InterFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = GhTextPrimary
-                )
-            },
-            text = {
-                OutlinedTextField(
-                    value = editTextValue,
-                    onValueChange = { editTextValue = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = GhBackground,
-                        unfocusedContainerColor = GhBackground,
-                        focusedBorderColor = GhButtonPrimary,
-                        unfocusedBorderColor = GhBorder,
-                        focusedTextColor = GhTextPrimary,
-                        unfocusedTextColor = GhTextPrimary
-                    )
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        messageToEdit?.let { target ->
-                            chatViewModel.editMessage(chatId, target.msgId, editTextValue)
-                        }
-                        messageToEdit = null
-                    }
-                ) {
-                    Text("Simpan", fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, color = GhButtonPrimary)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { messageToEdit = null }) {
-                    Text("Batal", fontFamily = InterFontFamily, color = GhTextSecondary)
-                }
-            },
-            containerColor = GhSurface
-        )
-    }
+@Composable
+private fun ChatBubbleItem(
+    message: ChatMessage
+) {
+    val isOutgoing = message.isFromMe
+    val bubbleColor = if (isOutgoing) Color(0xFFDCF8C6) else Color.White
+    val textColor = Color(0xFF1F2328)
+    val timestampColor = Color(0xFF6B7280)
 
-    if (messageToDeleteId != null) {
-        AlertDialog(
-            onDismissRequest = { messageToDeleteId = null },
-            title = {
-                Text(
-                    text = "Hapus Pesan?",
-                    fontFamily = InterFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = GhTextPrimary
-                )
-            },
-            text = {
-                Text(
-                    text = "Pesan ini akan dihapus dari server Firebase untuk semua orang.",
-                    fontFamily = InterFontFamily,
-                    fontSize = 14.sp,
-                    color = GhTextSecondary
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        messageToDeleteId?.let { id ->
-                            chatViewModel.deleteMessage(chatId, id, deleteForEveryone = true)
-                        }
-                        messageToDeleteId = null
-                    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (isOutgoing) Modifier.align(Alignment.CenterEnd) else Modifier.align(Alignment.CenterStart)
+                ),
+            horizontalAlignment = if (isOutgoing) Alignment.End else Alignment.Start
+        ) {
+            val bubbleShape = if (isOutgoing) {
+                RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = 18.dp, bottomEnd = 6.dp)
+            } else {
+                RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = 6.dp, bottomEnd = 18.dp)
+            }
+
+            Box(
+                modifier = Modifier
+                    .widthIn(max = 280.dp)
+                    .padding(start = if (isOutgoing) 64.dp else 0.dp, end = if (isOutgoing) 0.dp else 64.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .background(color = bubbleColor, shape = bubbleShape)
+                        .border(0.5.dp, Color(0xFFE7E7E7), shape = bubbleShape)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
-                    Text("Hapus", fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, color = Color(0xFFFF453A))
+                    Column {
+                        if (!message.replyTo.isNullOrEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isOutgoing) Color(0xFFBDDEC5) else Color(0xFFF1F5F9))
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = "Balasan",
+                                    fontFamily = InterFontFamily,
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF374151)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+
+                        Text(
+                            text = message.text,
+                            fontFamily = InterFontFamily,
+                            fontSize = 15.sp,
+                            lineHeight = 20.sp,
+                            color = textColor
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Text(
+                                text = message.time,
+                                fontFamily = InterFontFamily,
+                                fontSize = 11.sp,
+                                color = timestampColor
+                            )
+
+                            if (isOutgoing) {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Done,
+                                    contentDescription = "Read",
+                                    tint = Color(0xFF3B82F6),
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                        }
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { messageToDeleteId = null }) {
-                    Text("Batal", fontFamily = InterFontFamily, color = GhTextSecondary)
-                }
-            },
-            containerColor = GhSurface
-        )
+            }
+        }
     }
 }

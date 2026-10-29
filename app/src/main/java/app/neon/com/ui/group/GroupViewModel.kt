@@ -251,31 +251,11 @@ class GroupViewModel @Inject constructor(
         }
     }
 
-    fun openEditGroupDialog() {
-        _uiState.update { it.copy(isEditGroupDialogVisible = true) }
-    }
-
-    fun closeEditGroupDialog() {
-        _uiState.update { it.copy(isEditGroupDialogVisible = false) }
-    }
-
-    fun openInviteDialog() {
-        _uiState.update { it.copy(isInviteDialogVisible = true, inviteUsernameQuery = "", inviteError = null) }
-    }
-
-    fun closeInviteDialog() {
-        _uiState.update { it.copy(isInviteDialogVisible = false) }
-    }
-
-    fun openCreatePollDialog() {
-        _uiState.update { it.copy(isCreatePollDialogVisible = true) }
-    }
-
-    fun closeCreatePollDialog() {
-        _uiState.update { it.copy(isCreatePollDialogVisible = false) }
-    }
-
-    fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
-    }
+    fun openEditGroupDialog() { _uiState.update { it.copy(isEditGroupDialogVisible = true) } }
+    fun closeEditGroupDialog() { _uiState.update { it.copy(isEditGroupDialogVisible = false) } }
+    fun openInviteDialog() { _uiState.update { it.copy(isInviteDialogVisible = true, inviteUsernameQuery = "", inviteError = null) } }
+    fun closeInviteDialog() { _uiState.update { it.copy(isInviteDialogVisible = false) } }
+    fun openCreatePollDialog() { _uiState.update { it.copy(isCreatePollDialogVisible = true) } }
+    fun closeCreatePollDialog() { _uiState.update { it.copy(isCreatePollDialogVisible = false) } }
+    fun clearError() { _uiState.update { it.copy(errorMessage = null) } }
 }

@@ -62,17 +62,14 @@ fun MainScreen(
             NavigationBar(
                 containerColor = darkBarBg,
                 tonalElevation = 0.dp,
-                modifier = Modifier
-                    .height(68.dp)
-                    .border(
-                        width = 1.dp,
-                        color = Color(0xFF222638),
-                        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                    )
+                modifier = Modifier.height(68.dp).border(
+                    width = 1.dp,
+                    color = Color(0xFF222638),
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                )
             ) {
                 bottomNavItems.forEach { item ->
                     val isSelected = currentTab == item.route
-
                     NavigationBarItem(
                         selected = isSelected,
                         onClick = { currentTab = item.route },
@@ -102,11 +99,7 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             when (currentTab) {
                 "chat" -> {
                     ChatListScreen(
@@ -115,9 +108,7 @@ fun MainScreen(
                 }
                 "music" -> {
                     val musicViewModel: MusicViewModel = hiltViewModel()
-                    MusicHomeScreen(
-                        musicViewModel = musicViewModel
-                    )
+                    MusicHomeScreen(musicViewModel = musicViewModel)
                 }
                 "leaderboard" -> {
                     val leaderboardViewModel: LeaderboardViewModel = hiltViewModel()
@@ -134,33 +125,6 @@ fun MainScreen(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun TabPlaceholder(title: String, subtitle: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(24.dp)
-        ) {
-            Text(
-                text = title,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = subtitle,
-                fontSize = 14.sp,
-                color = Color(0xFF888EA8),
-                textAlign = TextAlign.Center
-            )
         }
     }
 }

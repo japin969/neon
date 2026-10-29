@@ -94,9 +94,7 @@ fun CallScreen(
                 .build(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .blur(radius = 35.dp)
+            modifier = Modifier.fillMaxSize().blur(radius = 35.dp)
         )
 
         Box(
@@ -167,9 +165,7 @@ fun CallScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 32.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -230,9 +226,7 @@ fun CallScreen(
                         .shadow(12.dp, CircleShape)
                         .clip(CircleShape)
                         .background(GhCallEndRed)
-                        .bouncyClickable {
-                            callViewModel.endCall(onEndCallClick)
-                        },
+                        .bouncyClickable { callViewModel.endCall(onEndCallClick) },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -249,10 +243,7 @@ fun CallScreen(
             visible = isVideoEnabled,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(top = 16.dp, end = 16.dp)
+            modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(top = 16.dp, end = 16.dp)
         ) {
             Box(
                 modifier = Modifier
