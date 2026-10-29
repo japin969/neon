@@ -6,3 +6,5 @@ coverage/
 *.log
 .env*
 !.env.example
+backup_model/
+backup_ui_chat/
