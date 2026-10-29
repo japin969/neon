@@ -1,7 +1,6 @@
 package app.neon.com.ui.chat
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -36,7 +35,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.Icon
@@ -55,7 +53,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
@@ -101,22 +98,8 @@ fun ChatDetailScreen(
         allMessages.takeLast(currentLimit)
     }
 
-    val isUserScrolledUp by remember {
-        derivedStateOf {
-            val total = listState.layoutInfo.totalItemsCount
-            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            total > 0 && lastVisible < total - 2
-        }
-    }
-
     val canSend by remember {
         derivedStateOf { inputText.trim().isNotEmpty() }
-    }
-
-    LaunchedEffect(allMessages.size) {
-        if (!isUserScrolledUp && pagedMessages.isNotEmpty()) {
-            listState.animateScrollToItem(pagedMessages.size - 1)
-        }
     }
 
     fun performSendMessage() {
@@ -252,37 +235,6 @@ fun ChatDetailScreen(
                     key = { it.msgId }
                 ) { msg ->
                     ChatBubbleItem(message = msg)
-                }
-            }
-
-            AnimatedVisibility(
-                visible = isUserScrolledUp,
-                enter = fadeIn(animationSpec = tween(220)),
-                exit = fadeOut(animationSpec = tween(180)),
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .shadow(4.dp, CircleShape)
-                        .clip(CircleShape)
-                        .background(Color.White)
-                        .border(1.dp, Color(0xFFE4E7EC), CircleShape)
-                        .clickable {
-                            scope.launch {
-                                listState.animateScrollToItem(pagedMessages.size - 1)
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Scroll to bottom",
-                        tint = Color(0xFF1F2328),
-                        modifier = Modifier.size(18.dp)
-                    )
                 }
             }
         }
