@@ -9,9 +9,11 @@ import app.neon.com.data.repository.MusicRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -53,7 +55,11 @@ class MusicViewModel @Inject constructor(
     val lovedSongIds: StateFlow<Set<String>> = _lovedSongIds.asStateFlow()
 
     val uiState: StateFlow<MusicPlayerUiState> = combine(
-        _currentSong, _isPlaying, _currentPositionMs, _durationMs, _lovedSongIds
+        _currentSong,
+        _isPlaying,
+        _currentPositionMs,
+        _durationMs,
+        _lovedSongIds
     ) { current, playing, pos, dur, loved ->
         MusicPlayerUiState(
             currentSong = current,
@@ -63,9 +69,9 @@ class MusicViewModel @Inject constructor(
             lovedSongIds = loved
         )
     }.stateIn(
-        viewModelScope,
-        kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
-        MusicPlayerUiState()
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = MusicPlayerUiState()
     )
 
     init {
@@ -82,8 +88,11 @@ class MusicViewModel @Inject constructor(
 
     fun loadSongs(query: String = "") {
         viewModelScope.launch {
-            try { _songs.value = repository.searchSongs(query) }
-            catch (e: Exception) { _songs.value = emptyList() }
+            try {
+                _songs.value = repository.searchSongs(query)
+            } catch (_: Exception) {
+                _songs.value = emptyList()
+            }
         }
     }
 

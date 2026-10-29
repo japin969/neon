@@ -138,8 +138,13 @@ fun MusicPlayerScreen(
                         .border(2.dp, if (state.isPlaying) neonGreen.copy(alpha = 0.6f) else Color(0xFF282E44), RoundedCornerShape(24.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (song.albumCoverUrl.isNotBlank()) {
-                        AsyncImage(model = song.albumCoverUrl, contentDescription = song.title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    if (song.albumArt.isNotBlank()) {
+                        AsyncImage(
+                            model = song.albumArt,
+                            contentDescription = song.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     } else {
                         Icon(Icons.Default.MusicNote, null, tint = neonGreen, modifier = Modifier.size(80.dp))
                     }

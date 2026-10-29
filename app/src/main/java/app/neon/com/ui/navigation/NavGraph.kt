@@ -36,15 +36,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import app.neon.com.ui.auth.AuthViewModel
-import app.neon.com.ui.auth.LoginViewModel
-import app.neon.com.ui.auth.RegisterViewModel
 import app.neon.com.ui.auth.LoginScreen
 import app.neon.com.ui.auth.RegisterScreen
+import app.neon.com.ui.auth.RegisterViewModel
 import app.neon.com.ui.call.CallScreen
-import app.neon.com.ui.call.CallViewModel
+import app.neon.com.ui.viewmodel.CallViewModel
 import app.neon.com.ui.chat.ChatDetailScreen
-import app.neon.com.ui.chat.ChatDetailViewModel
+import app.neon.com.ui.viewmodel.ChatViewModel
 import app.neon.com.ui.group.CreateGroupScreen
 import app.neon.com.ui.group.GroupInfoScreen
 import app.neon.com.ui.group.GroupViewModel
@@ -169,7 +167,6 @@ class NeontNavigationActions(private val navController: NavHostController) {
         }
     }
 
-
     fun navigateToMain(tab: String = "chat") {
         navController.navigate(Screen.Main.createRoute(tab)) {
             popUpTo(0) { inclusive = true }
@@ -270,12 +267,10 @@ fun NeontNavGraph(
             ) + fadeOut(animationSpec = tween(300))
         }
     ) {
-        // 1. Layar Splash
         composable(Screen.Splash.route) {
             RoutePlaceholderScreen(name = "Neont Splash")
         }
 
-        // 2. Layar Login (TAHAP 2)
         composable(Screen.Login.route) {
             val authViewModel: app.neon.com.ui.viewmodel.AuthViewModel = hiltViewModel()
             LoginScreen(
@@ -286,7 +281,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 3. Layar Registrasi (TAHAP 2)
         composable(Screen.Register.route) {
             val registerViewModel: RegisterViewModel = hiltViewModel()
             RegisterScreen(
@@ -300,9 +294,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 4. Layar Buat Username (TAHAP 2)
-
-        // 5. Layar Utama (Tabs: Chat, Music, Leaderboard, Profil)
         composable(
             route = Screen.Main.route,
             arguments = listOf(
@@ -339,7 +330,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 6. Layar Detail Chat Enkripsi (TAHAP 4)
         composable(
             route = Screen.ChatDetail.route,
             arguments = listOf(
@@ -362,7 +352,7 @@ fun NeontNavGraph(
             val recipientId = backStackEntry.arguments?.getString("recipientId") ?: ""
             val isGroup = backStackEntry.arguments?.getBoolean("isGroup") ?: false
             val chatName = backStackEntry.arguments?.getString("chatName") ?: ""
-            val chatViewModel: app.neon.com.ui.viewmodel.ChatViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+            val chatViewModel: ChatViewModel = hiltViewModel()
             ChatDetailScreen(
                 chatViewModel = chatViewModel,
                 chatPartnerName = chatName,
@@ -370,7 +360,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 7. Buat Grup (TAHAP 5)
         composable(Screen.CreateGroup.route) {
             val groupViewModel: GroupViewModel = hiltViewModel()
             CreateGroupScreen(
@@ -382,7 +371,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 8. Info & Admin Grup (TAHAP 5)
         composable(
             route = Screen.GroupInfo.route,
             arguments = listOf(
@@ -398,7 +386,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 9. Voice & Video Call (TAHAP 5)
         composable(
             route = Screen.Call.route,
             arguments = listOf(
@@ -421,7 +408,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 10. Story Viewer (TAHAP 6)
         composable(
             route = Screen.StoryViewer.route,
             arguments = listOf(
@@ -437,7 +423,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 11. Daftar Followers / Following (TAHAP 6)
         composable(
             route = Screen.FollowList.route,
             arguments = listOf(
@@ -459,7 +444,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 12. Edit Profil (TAHAP 6)
         composable(Screen.EditProfile.route) {
             val profileViewModel: ProfileViewModel = hiltViewModel()
             EditProfileScreen(
@@ -468,7 +452,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 13. Pengaturan (TAHAP 6)
         composable(Screen.Settings.route) {
             val profileViewModel: ProfileViewModel = hiltViewModel()
             SettingsScreen(
@@ -481,7 +464,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 14. Pengaturan Penyimpanan & Cache (TAHAP 6)
         composable(Screen.StorageSettings.route) {
             val profileViewModel: ProfileViewModel = hiltViewModel()
             StorageSettingsScreen(
@@ -490,7 +472,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 15. Pengaturan Perangkat Terhubung (TAHAP 6)
         composable(Screen.DevicesSettings.route) {
             val profileViewModel: ProfileViewModel = hiltViewModel()
             DevicesSettingsScreen(
@@ -499,7 +480,6 @@ fun NeontNavGraph(
             )
         }
 
-        // 16. Spotify-Style Music Player Fullscreen (TAHAP 7)
         composable(
             route = Screen.VideoPlayer.route,
             arguments = listOf(
@@ -511,17 +491,18 @@ fun NeontNavGraph(
             val initialIndex = backStackEntry.arguments?.getInt("initialIndex") ?: 0
             val profileViewModel: app.neon.com.ui.profile.ProfileViewModel = androidx.hilt.navigation.compose.hiltViewModel()
             val state by profileViewModel.uiState.collectAsState()
-            
+
             LaunchedEffect(userId) {
                 profileViewModel.loadUserVideos(userId)
             }
-            
+
             VideoPlayerScreen(
                 videos = state.userVideos,
                 initialIndex = initialIndex,
                 onBackClick = { navController.popBackStack() }
             )
         }
+
         composable(Screen.MusicPlayer.route) {
             val musicViewModel: MusicViewModel = hiltViewModel()
             MusicPlayerScreen(
