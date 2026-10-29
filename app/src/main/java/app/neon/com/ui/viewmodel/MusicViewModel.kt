@@ -11,6 +11,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -20,7 +21,10 @@ data class MusicPlayerUiState(
     val currentPositionMs: Long = 0L,
     val durationMs: Long = 1L,
     val lovedSongIds: Set<String> = emptySet()
-)
+) {
+    val isCurrentSongLoved: Boolean
+        get() = currentSong?.id?.let { it in lovedSongIds } == true
+}
 
 @HiltViewModel
 class MusicViewModel @Inject constructor(
@@ -51,8 +55,18 @@ class MusicViewModel @Inject constructor(
     val uiState: StateFlow<MusicPlayerUiState> = combine(
         _currentSong, _isPlaying, _currentPositionMs, _durationMs, _lovedSongIds
     ) { current, playing, pos, dur, loved ->
-        MusicPlayerUiState(currentSong = current, isPlaying = playing, currentPositionMs = pos, durationMs = dur, lovedSongIds = loved)
-    }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), MusicPlayerUiState())
+        MusicPlayerUiState(
+            currentSong = current,
+            isPlaying = playing,
+            currentPositionMs = pos,
+            durationMs = dur,
+            lovedSongIds = loved
+        )
+    }.stateIn(
+        viewModelScope,
+        kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+        MusicPlayerUiState()
+    )
 
     init {
         loadSongs()
@@ -62,13 +76,14 @@ class MusicViewModel @Inject constructor(
     private fun observePlayerState() {
         viewModelScope.launch { playerManager.currentSong.collect { _currentSong.value = it } }
         viewModelScope.launch { playerManager.isPlaying.collect { _isPlaying.value = it } }
-        viewModelScope.launch { playerManager.currentPositionMs.collect { _currentPositionMs.value = it } }
         viewModelScope.launch { playerManager.durationMs.collect { _durationMs.value = it } }
+        viewModelScope.launch { playerManager.currentPositionMs.collect { _currentPositionMs.value = it } }
     }
 
     fun loadSongs(query: String = "") {
         viewModelScope.launch {
-            try { _songs.value = repository.searchSongs(query) } catch (e: Exception) { _songs.value = emptyList() }
+            try { _songs.value = repository.searchSongs(query) }
+            catch (e: Exception) { _songs.value = emptyList() }
         }
     }
 
@@ -81,10 +96,11 @@ class MusicViewModel @Inject constructor(
     fun toggleLoveSong(song: Song) {
         viewModelScope.launch {
             repository.toggleLoveSong("demo_user", song)
-            val updated = _songs.value.map { if (it.id == song.id) it.copy(isLoved = !it.isLoved) else it }
+            val updated = _songs.value.map {
+                if (it.id == song.id) it.copy(isLoved = !it.isLoved) else it
+            }
             _songs.value = updated
-            val loved = updated.filter { it.isLoved }.map { it.id }.toSet()
-            _lovedSongIds.value = loved
+            _lovedSongIds.value = updated.filter { it.isLoved }.map { it.id }.toSet()
         }
     }
 
@@ -92,5 +108,8 @@ class MusicViewModel @Inject constructor(
         _currentSong.value?.let { toggleLoveSong(it) }
     }
 
-    override fun onCleared() { super.onCleared(); playerManager.release() }
+    override fun onCleared() {
+        super.onCleared()
+        playerManager.release()
+    }
 }
