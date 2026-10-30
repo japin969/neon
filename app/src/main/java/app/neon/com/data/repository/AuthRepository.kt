@@ -43,39 +43,25 @@ class AuthRepository @Inject constructor(
     /**
      * Sign In existing user with Email and Password.
      */
-    fun signInWithEmail(email: String, pass: String): Flow<Result<User>> = callbackFlow {
+    fun signInWithEmail(email: String, pass: String): Flow<Result<User>> = flow {
         try {
             val authResult = firebaseAuth.signInWithEmailAndPassword(email.trim(), pass).await()
             val uid = authResult.user?.uid ?: throw Exception("Autentikasi gagal: UID tidak ditemukan")
 
-            // Fetch user profile from Firebase Realtime Database
+            // Fetch user profile from Firebase Realtime Database (one-time get)
             val userRef = firebaseDatabase.getReference("users").child(uid)
-            val listener = object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val user = snapshot.getValue(User::class.java)
-                    if (user != null) {
-                        // Cache locally
-                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launchSilently {
-                            localDatabase.saveCurrentUser(user)
-                        }
-                        trySend(Result.success(user))
-                    } else {
-                        // If user profile is not completed yet, return partial user to prompt username screen
-                        val partialUser = User(uid = uid, email = email)
-                        trySend(Result.success(partialUser))
-                    }
-                }
+            val snapshot = userRef.get().await()
+            val user = snapshot.getValue(User::class.java)
 
-                override fun onCancelled(error: DatabaseError) {
-                    trySend(Result.failure(Exception(error.message)))
-                }
+            if (user != null) {
+                localDatabase.saveCurrentUser(user)
+                emit(Result.success(user))
+            } else {
+                val partialUser = User(uid = uid, email = email)
+                emit(Result.success(partialUser))
             }
-
-            userRef.addListenerForSingleValueEvent(listener)
-            awaitClose { userRef.removeEventListener(listener) }
         } catch (e: Exception) {
-            trySend(Result.failure(e))
-            close(e)
+            emit(Result.failure(e))
         }
     }
 

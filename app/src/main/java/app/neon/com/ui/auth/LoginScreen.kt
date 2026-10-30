@@ -142,7 +142,7 @@ private fun AuthLogo() {
         Text(
             text = "NEON",
             color = Color.White,
-            style = MaterialTheme.typography.displaySmall.copy(letterSpacing = 1.sp)
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp, letterSpacing = 0.sp)
         )
     }
 }

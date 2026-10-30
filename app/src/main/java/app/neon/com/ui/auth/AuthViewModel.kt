@@ -54,7 +54,7 @@ class AuthViewModel @Inject constructor(
         private const val RESET_COOLDOWN_SECONDS = 30
         private const val MIN_PASSWORD_LENGTH = 8
         private const val MAX_EMAIL_LENGTH = 254
-        private const val REQUEST_TIMEOUT_MS = 20_000L
+        private const val REQUEST_TIMEOUT_MS = 60_000L
         private const val MAX_USERNAME_ATTEMPTS = 4
         private const val USERNAME_PREFIX = "userNE"
         private val UnsafeInput = Regex("[<>\"';]|--")
