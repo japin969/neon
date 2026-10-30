@@ -107,7 +107,6 @@ dependencies {
 
     // Coil (Gambar)
     implementation("io.coil-kt:coil-compose:2.7.0")
-    implementation("androidx.compose.ui:ui-text-google-fonts:1.7.6")
     implementation("com.vanniktech:emoji-ios:0.21.0")
     implementation(project(":compose-symphony"))
 
