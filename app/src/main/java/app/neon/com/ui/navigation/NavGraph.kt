@@ -38,7 +38,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import app.neon.com.ui.auth.LoginScreen
 import app.neon.com.ui.auth.RegisterScreen
-import app.neon.com.ui.auth.RegisterViewModel
 import app.neon.com.ui.call.CallScreen
 import app.neon.com.ui.viewmodel.CallViewModel
 import app.neon.com.ui.chat.ChatDetailScreen
@@ -285,14 +284,14 @@ fun NeontNavGraph(
         }
 
         composable(Screen.Register.route) {
-            val registerViewModel: RegisterViewModel = hiltViewModel()
+            val authViewModel: app.neon.com.ui.auth.AuthViewModel = hiltViewModel()
             RegisterScreen(
-                viewModel = registerViewModel,
+                authViewModel = authViewModel,
                 onNavigateToLogin = {
                     navigationActions.navigateToLogin()
                 },
                 onRegisterSuccess = {
-                    navigationActions.navigateToMain("chat")
+                    navController.navigate(Screen.CreateUsername.route)
                 }
             )
         }
