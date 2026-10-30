@@ -1,64 +1,125 @@
-import app.neon.com.ui.auth.ResetPasswordScreen
 package app.neon.com.ui.navigation
 
+import app.neon.com.ui.auth.ResetPasswordScreen
+
 import androidx.compose.runtime.getValue
+
 import androidx.compose.runtime.LaunchedEffect
+
 import androidx.compose.runtime.collectAsState
+
 import app.neon.com.ui.screens.RoutePlaceholderScreen
+
 import androidx.compose.animation.AnimatedContentTransitionScope
+
 import androidx.compose.animation.core.tween
+
 import androidx.compose.animation.fadeIn
+
 import androidx.compose.animation.fadeOut
+
 import androidx.compose.foundation.background
+
 import androidx.compose.foundation.layout.Box
+
 import androidx.compose.foundation.layout.fillMaxSize
+
 import androidx.compose.material.icons.Icons
+
 import androidx.compose.material.icons.filled.AccountCircle
+
 import androidx.compose.material.icons.filled.ChatBubble
+
 import androidx.compose.material.icons.filled.EmojiEvents
+
 import androidx.compose.material.icons.filled.LibraryMusic
+
 import androidx.compose.material.icons.outlined.AccountCircle
+
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
+
 import androidx.compose.material.icons.outlined.EmojiEvents
+
 import androidx.compose.material.icons.outlined.LibraryMusic
+
 import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.material3.Text
+
 import androidx.compose.runtime.Composable
+
 import androidx.compose.runtime.remember
+
 import androidx.compose.ui.Alignment
+
 import androidx.compose.ui.Modifier
+
 import androidx.compose.ui.graphics.vector.ImageVector
+
 import androidx.hilt.navigation.compose.hiltViewModel
+
 import androidx.navigation.NavBackStackEntry
+
 import androidx.navigation.NavGraph.Companion.findStartDestination
+
 import androidx.navigation.NavHostController
+
 import androidx.navigation.NavType
+
 import androidx.navigation.compose.NavHost
+
 import androidx.navigation.compose.composable
+
 import androidx.navigation.compose.rememberNavController
+
 import androidx.navigation.navArgument
+
 import app.neon.com.ui.auth.LoginScreen
+
 import app.neon.com.ui.auth.RegisterScreen
+
 import app.neon.com.ui.call.CallScreen
+
 import app.neon.com.ui.viewmodel.CallViewModel
+
 import app.neon.com.ui.chat.ChatDetailScreen
+
 import app.neon.com.ui.viewmodel.ChatViewModel
+
 import app.neon.com.ui.group.CreateGroupScreen
+
 import app.neon.com.ui.group.GroupInfoScreen
+
 import app.neon.com.ui.group.GroupViewModel
+
 import app.neon.com.ui.main.MainScreen
+
 import app.neon.com.ui.video.VideoPlayerScreen
+
 import app.neon.com.ui.music.MusicPlayerScreen
+
 import app.neon.com.ui.viewmodel.MusicViewModel
+
 import app.neon.com.ui.profile.DevicesSettingsScreen
+
 import app.neon.com.ui.profile.EditProfileScreen
+
 import app.neon.com.ui.profile.FollowListScreen
+
 import app.neon.com.ui.profile.FollowListViewModel
+
 import app.neon.com.ui.profile.ProfileViewModel
+
 import app.neon.com.ui.profile.SettingsScreen
+
 import app.neon.com.ui.profile.StorageSettingsScreen
+
 import app.neon.com.ui.profile.StoryViewerScreen
+
 import app.neon.com.ui.profile.StoryViewerViewModel
+
+
+
 
 sealed class Screen(val route: String) {
     object Splash : Screen("splash")
