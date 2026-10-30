@@ -296,7 +296,11 @@ class AuthViewModel @Inject constructor(
     }
 
     private suspend fun <T> awaitFirst(flow: Flow<Result<T>>): Result<T>? = try {
-        withTimeoutOrNull(REQUEST_TIMEOUT_MS) { flow.flowOn(Dispatchers.IO).firstOrNull() }
+        val result = withTimeoutOrNull(REQUEST_TIMEOUT_MS) { flow.flowOn(Dispatchers.IO).firstOrNull() }
+        if (result == null) {
+            android.util.Log.e("NeontAuth", "TIMEOUT: flow tidak emit dalam ${REQUEST_TIMEOUT_MS}ms")
+        }
+        result
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {

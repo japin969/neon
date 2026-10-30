@@ -1,5 +1,6 @@
 package app.neon.com.data.repository
 
+import android.util.Log
 import app.neon.com.data.local.FileDatabaseManager
 import app.neon.com.data.model.User
 import com.google.firebase.auth.FirebaseAuth
@@ -7,12 +8,14 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,51 +26,61 @@ class AuthRepository @Inject constructor(
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
     private val firebaseDatabase: FirebaseDatabase = FirebaseDatabase.getInstance()
 
+    private companion object {
+        const val TAG = "NeontAuth"
+        const val PROFILE_TIMEOUT_MS = 5_000L
+    }
+
     private val neonAvatarColors = listOf(
-        "#00FF66", // Neon Green
-        "#00E5FF", // Neon Cyan
-        "#FF007F", // Neon Magenta / Pink
-        "#7928CA", // Neon Purple
-        "#FF9100", // Neon Orange
-        "#00F5D4", // Neon Mint
-        "#7B2CBF", // Neon Violet
-        "#F72585"  // Neon Rose
+        "#00FF66", "#00E5FF", "#FF007F", "#7928CA",
+        "#FF9100", "#00F5D4", "#7B2CBF", "#F72585"
     )
 
     fun getCurrentFirebaseUser() = firebaseAuth.currentUser
-
     fun getCachedUser(): User? = localDatabase.getCurrentUser()
-
     fun getCurrentUser(): User? = localDatabase.getCurrentUser()
 
-    /**
-     * Sign In existing user with Email and Password.
-     */
     fun signInWithEmail(email: String, pass: String): Flow<Result<User>> = flow {
-        try {
-            val authResult = firebaseAuth.signInWithEmailAndPassword(email.trim(), pass).await()
-            val uid = authResult.user?.uid ?: throw Exception("Autentikasi gagal: UID tidak ditemukan")
+        val cleanEmail = email.trim()
+        Log.d(TAG, "1. Memulai signInWithEmailAndPassword")
+        val authResult = firebaseAuth.signInWithEmailAndPassword(cleanEmail, pass).await()
+        val uid = authResult.user?.uid ?: throw IllegalStateException("Autentikasi gagal: UID tidak ditemukan")
+        Log.d(TAG, "2. Auth sukses, uid=$uid")
 
-            // Fetch user profile from Firebase Realtime Database (one-time get)
-            val userRef = firebaseDatabase.getReference("users").child(uid)
-            val snapshot = userRef.get().await()
-            val user = snapshot.getValue(User::class.java)
-
-            if (user != null) {
-                localDatabase.saveCurrentUser(user)
-                emit(Result.success(user))
-            } else {
-                val partialUser = User(uid = uid, email = email)
-                emit(Result.success(partialUser))
+        val profile: User? = try {
+            withTimeoutOrNull(PROFILE_TIMEOUT_MS) {
+                Log.d(TAG, "3. Mengambil profil RTDB")
+                firebaseDatabase.getReference("users").child(uid).get().await()
+                    .getValue(User::class.java)
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            emit(Result.failure(e))
+            Log.w(TAG, "3. Gagal ambil profil RTDB: ${e.javaClass.simpleName}: ${e.message}")
+            null
         }
+
+        Log.d(TAG, "4. Profil ${if (profile != null) "ditemukan" else "TIDAK didapat (pakai fallback)"}")
+        val user = profile ?: User(uid = uid, email = cleanEmail)
+
+        if (profile != null) {
+            try {
+                localDatabase.saveCurrentUser(profile)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Gagal simpan cache lokal: ${e.message}")
+            }
+        }
+
+        Log.d(TAG, "5. Emit sukses")
+        emit(Result.success(user))
+    }.catch { e ->
+        if (e is CancellationException) throw e
+        Log.e(TAG, "Login gagal: ${e.javaClass.simpleName}: ${e.message}", e)
+        emit(Result.failure(e))
     }
 
-    /**
-     * Register new user with Email and Password. Returns UID on success.
-     */
     fun signUpWithEmail(email: String, pass: String): Flow<Result<String>> = flow {
         try {
             val authResult = firebaseAuth.createUserWithEmailAndPassword(email.trim(), pass).await()
@@ -78,9 +91,6 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    /**
-     * Check if username is available in Firebase Realtime Database (/usernames/{username}).
-     */
     fun checkUsernameAvailability(username: String): Flow<Result<Boolean>> = callbackFlow {
         val sanitized = username.trim().lowercase()
         if (sanitized.length < 3) {
@@ -88,67 +98,39 @@ class AuthRepository @Inject constructor(
             close()
             return@callbackFlow
         }
-
         val ref = firebaseDatabase.getReference("usernames").child(sanitized)
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                // If it does not exist, username is available!
-                val isAvailable = !snapshot.exists()
-                trySend(Result.success(isAvailable))
+                trySend(Result.success(!snapshot.exists()))
             }
-
             override fun onCancelled(error: DatabaseError) {
                 trySend(Result.failure(Exception(error.message)))
             }
         }
-
         ref.addListenerForSingleValueEvent(listener)
         awaitClose { ref.removeEventListener(listener) }
     }
 
-    /**
-     * Create initial user profile with username, auto-generated initials, and random neon avatar color.
-     */
     fun createUserProfile(uid: String, email: String, username: String): Flow<Result<User>> = flow {
         try {
             val sanitizedUsername = username.trim().lowercase()
             val randomColor = neonAvatarColors.random()
-            val displayName = username.trim()
-
             val newUser = User(
-                uid = uid,
-                email = email,
-                username = sanitizedUsername,
-                displayName = displayName,
-                avatarUrl = "",
-                avatarColorHex = randomColor,
-                bio = "Hai! Saya baru bergabung di Neont.",
-                followersCount = 0,
-                followingCount = 0,
-                likesCount = 0,
-                createdAt = System.currentTimeMillis()
+                uid = uid, email = email,
+                username = sanitizedUsername, displayName = username.trim(),
+                avatarColorHex = randomColor, bio = "Hai! Saya baru bergabung di Neont."
             )
-
-            // Atomic Multi-Path Update to Firebase Realtime Database
             val updates = hashMapOf<String, Any>(
                 "/users/$uid" to newUser,
                 "/usernames/$sanitizedUsername" to uid,
                 "/leaderboard/$uid" to mapOf(
-                    "uid" to uid,
-                    "username" to sanitizedUsername,
-                    "displayName" to displayName,
-                    "avatarColorHex" to randomColor,
-                    "likesCount" to 0,
-                    "followersCount" to 0,
-                    "score" to 0
+                    "uid" to uid, "username" to sanitizedUsername,
+                    "displayName" to username.trim(), "avatarColorHex" to randomColor,
+                    "likesCount" to 0, "followersCount" to 0, "score" to 0
                 )
             )
-
             firebaseDatabase.reference.updateChildren(updates).await()
-
-            // Save to local cache
             localDatabase.saveCurrentUser(newUser)
-
             emit(Result.success(newUser))
         } catch (e: Exception) {
             emit(Result.failure(e))
@@ -160,71 +142,15 @@ class AuthRepository @Inject constructor(
         localDatabase.clearSession()
     }
 
-    private fun kotlinx.coroutines.CoroutineScope.launchSilently(block: suspend () -> Unit) {
-        kotlinx.coroutines.GlobalScope.launch {
-            try { block() } catch (_: Exception) {}
-        }
-    }
+    fun canChangeDisplayName(user: User): Boolean =
+        (System.currentTimeMillis() - user.lastDisplayNameChange) >= (7L * 24 * 60 * 60 * 1000)
 
-    // --- FITUR UPDATE PROFILE (DISPLAY & USERNAME) ---
-    fun canChangeDisplayName(user: User): Boolean {
-        val now = System.currentTimeMillis()
-        val sevenDaysMs = 7L * 24 * 60 * 60 * 1000
-        return (now - user.lastDisplayNameChange) >= sevenDaysMs
-    }
-
-    fun canChangeUsername(user: User): Boolean {
-        val now = System.currentTimeMillis()
-        val thirtyDaysMs = 30L * 24 * 60 * 60 * 1000
-        return (now - user.lastUsernameChange) >= thirtyDaysMs
-    }
+    fun canChangeUsername(user: User): Boolean =
+        (System.currentTimeMillis() - user.lastUsernameChange) >= (30L * 24 * 60 * 60 * 1000)
 
     fun getRemainingDays(lastChange: Long, cooldownDays: Int): Int {
-        val now = System.currentTimeMillis()
         val cooldownMs = cooldownDays.toLong() * 24 * 60 * 60 * 1000
-        val elapsed = now - lastChange
-        if (elapsed >= cooldownMs) return 0
-        return ((cooldownMs - elapsed) / (24 * 60 * 60 * 1000)).toInt() + 1
-    }
-
-    suspend fun updateDisplayName(uid: String, newDisplayName: String): Result<Unit> {
-        return try {
-            val ref = firebaseDatabase.getReference("users").child(uid)
-            val updates = mapOf(
-                "displayName" to newDisplayName,
-                "lastDisplayNameChange" to System.currentTimeMillis()
-            )
-            ref.updateChildren(updates).await()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun updateUsername(uid: String, newUsername: String): Result<Unit> {
-        return try {
-            val sanitized = newUsername.trim().lowercase()
-            // Cek ketersediaan dulu
-            val usernameRef = firebaseDatabase.getReference("usernames").child(sanitized)
-            val snapshot = usernameRef.get().await()
-            if (snapshot.exists()) {
-                return Result.failure(Exception("Username sudah terpakai"))
-            }
-            
-            // Update di users
-            val userRef = firebaseDatabase.getReference("users").child(uid)
-            val updates = mapOf(
-                "username" to sanitized,
-                "lastUsernameChange" to System.currentTimeMillis()
-            )
-            userRef.updateChildren(updates).await()
-            
-            // Daftarin username baru
-            usernameRef.setValue(uid).await()
-            
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        val elapsed = System.currentTimeMillis() - lastChange
+        return if (elapsed >= cooldownMs) 0 else ((cooldownMs - elapsed) / (24 * 60 * 60 * 1000)).toInt() + 1
     }
 }
