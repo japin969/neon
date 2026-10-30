@@ -1,3 +1,4 @@
+import androidx.compose.foundation.layout.Row
 package app.neon.com.ui.auth
 
 import androidx.compose.foundation.background
@@ -57,7 +58,8 @@ import app.neon.com.ui.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(
     authViewModel: AuthViewModel,
-    onLoginSuccess: () -> Unit = {}
+    onLoginSuccess: () -> Unit = {},
+    onNavigateToRegister: () -> Unit = {}
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
     val errorMessage by authViewModel.errorMessage.collectAsState()

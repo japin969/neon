@@ -1,3 +1,5 @@
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
 package app.neon.com.ui.auth
 
 import androidx.lifecycle.ViewModel
@@ -37,6 +39,14 @@ class AuthViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
+
+    // Variabel langsung untuk kompatibilitas UI lama
+    val currentUser: StateFlow<User?> = _uiState.map { it.currentUser }
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), null)
+    val errorMessage: StateFlow<String?> = _uiState.map { it.loginError ?: it.registrationError }
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), null)
+    val isLoading: StateFlow<Boolean> = _uiState.map { it.isLoading }
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000), false)
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
     private var usernameCheckJob: Job? = null
