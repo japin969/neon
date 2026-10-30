@@ -173,4 +173,41 @@ class AuthViewModel @Inject constructor(
             }
         }
     }
+
+    fun saveUsername(
+        username: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val uid = authRepository.getCurrentFirebaseUser()?.uid
+        val email = authRepository.getCachedUser()?.email ?: authRepository.getCurrentFirebaseUser()?.email
+        if (uid.isNullOrBlank() || email.isNullOrBlank()) {
+            onError("Sesi tidak ditemukan. Silakan daftar atau masuk ulang.")
+            return
+        }
+        saveUsername(uid, email, username, onSuccess, onError)
+    }
+
+    fun saveUsername(
+        uid: String,
+        email: String,
+        username: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            authRepository.createUserProfile(uid, email, username).collect { result ->
+                result.fold(
+                    onSuccess = { user ->
+                        _uiState.update { it.copy(currentUser = user) }
+                        onSuccess()
+                    },
+                    onFailure = { error ->
+                        onError(error.message ?: "Gagal menyimpan username")
+                    }
+                )
+            }
+        }
+    }
+
 }

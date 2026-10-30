@@ -1,280 +1,177 @@
 package app.neon.com.ui.auth
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AlternateEmail
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.neon.com.data.model.User
+import app.neon.com.ui.theme.InterFontFamily
+import app.neon.com.ui.theme.bouncyClickable
+
+private val BackgroundColor = Color(0xFF1C1C1E)
+private val SurfaceColor = Color(0xFF2C2C2E)
+private val PrimaryColor = Color(0xFF0A84FF)
+private val SecondaryTextColor = Color(0xFF8E8E93)
+private val ErrorColor = Color(0xFFFF453A)
+private val UsernameRegex = Regex("^[a-z0-9_]+$")
 
 @Composable
 fun CreateUsernameScreen(
-    uid: String,
-    email: String,
-    viewModel: AuthViewModel,
-    onProfileCreated: (User) -> Unit
+    authViewModel: AuthViewModel,
+    onUsernameCreated: () -> Unit = {}
 ) {
-    val state by viewModel.uiState.collectAsState()
-    val focusManager = LocalFocusManager.current
-    val scrollState = rememberScrollState()
+    var username by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
 
-    val neonGreen = Color(0xFF00FF66)
-    val neonCyan = Color(0xFF00E5FF)
-    val darkCardBg = Color(0xFF161824)
-    val focusRequester = remember { FocusRequester() }
-
-    // Dynamic initial 2-letter avatar generator
-    val initials = remember(state.username) {
-        val clean = state.username.trim()
-        when {
-            clean.length >= 2 -> clean.take(2).uppercase()
-            clean.length == 1 -> clean.take(1).uppercase()
-            else -> "NE"
-        }
-    }
-
-    // Dynamic color picker preview based on username hash
-    val previewColor = remember(state.username) {
-        val colors = listOf(
-            Color(0xFF00FF66),
-            Color(0xFF00E5FF),
-            Color(0xFFFF007F),
-            Color(0xFF7928CA),
-            Color(0xFFFF9100),
-            Color(0xFF00F5D4),
-            Color(0xFFF72585)
-        )
-        val index = kotlin.math.abs(state.username.hashCode()) % colors.size
-        colors[index]
-    }
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color.White,
+        unfocusedTextColor = Color.White,
+        focusedBorderColor = PrimaryColor,
+        unfocusedBorderColor = SecondaryTextColor,
+        errorBorderColor = ErrorColor,
+        cursorColor = PrimaryColor,
+        focusedLabelColor = PrimaryColor,
+        unfocusedLabelColor = SecondaryTextColor,
+        errorLabelColor = ErrorColor,
+        focusedContainerColor = BackgroundColor,
+        unfocusedContainerColor = BackgroundColor,
+        errorContainerColor = BackgroundColor
+    )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0D0E15))
+            .background(BackgroundColor)
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(horizontal = 24.dp, vertical = 36.dp),
+                .fillMaxWidth()
+                .background(SurfaceColor, RoundedCornerShape(20.dp))
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
             Text(
-                text = "Pilih Identitas Neont",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Black,
-                color = Color.White
+                text = "Pilih Username",
+                color = Color.White,
+                fontFamily = InterFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 24.sp,
+                textAlign = TextAlign.Center
             )
-
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Buat @username unik untuk mulai terhubung dan menikmati musik",
+                text = "Username ini akan terlihat oleh pengguna lain.",
+                color = SecondaryTextColor,
+                fontFamily = InterFontFamily,
                 fontSize = 14.sp,
-                color = Color(0xFF9094A6),
-                modifier = Modifier.padding(top = 6.dp, bottom = 32.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = username,
+                onValueChange = {
+                    username = it
+                    errorMessage = null
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Username (contoh: userneon1000)", fontFamily = InterFontFamily) },
+                singleLine = true,
+                isError = errorMessage != null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors
             )
 
-            // Live Initial Avatar Preview Generator
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = neonCyan
-            )
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            // Error Banner
-            if (state.errorMessage != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0x33FF0055))
-                        .border(1.dp, Color(0xFFFF0055), RoundedCornerShape(12.dp))
-                        .padding(14.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = "Peringatan",
-                            tint = Color(0xFFFF4D6D)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = state.errorMessage ?: "",
-                            color = Color(0xFFFF85A1),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = errorMessage.orEmpty(),
+                    color = ErrorColor,
+                    fontFamily = InterFontFamily,
+                    fontSize = 13.sp,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
-            // Card Input Username
-            Column(
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(darkCardBg)
-                    .border(1.dp, Color(0xFF262A3E), RoundedCornerShape(20.dp))
-                    .padding(20.dp)
-            ) {
-                OutlinedTextField(
-                    value = state.username,
-                    onValueChange = { viewModel.onUsernameChange(it) },
-                    label = { Text("Username (@username)", color = Color(0xFF888EA8)) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.AlternateEmail,
-                            contentDescription = "Username Icon",
-                            tint = neonGreen
-                        )
-                    },
-                    trailingIcon = {
+                    .height(50.dp)
+                    .alpha(if (isLoading) 0.6f else 1f)
+                    .background(PrimaryColor, RoundedCornerShape(12.dp))
+                    .bouncyClickable {
+                        if (isLoading) return@bouncyClickable
+                        val cleanUsername = username.trim()
                         when {
-                            state.isCheckingUsername -> {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp,
-                                    color = neonGreen
-                                )
+                            cleanUsername.length < 3 -> {
+                                errorMessage = "Username minimal 3 karakter."
                             }
-                            state.isUsernameAvailable == true -> {
-                                Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = "Tersedia",
-                                    tint = neonGreen
-                                )
+                            !UsernameRegex.matches(cleanUsername) -> {
+                                errorMessage = "Username hanya boleh huruf kecil, angka, dan underscore."
                             }
-                            state.isUsernameAvailable == false && state.username.length >= 3 -> {
-                                Icon(
-                                    imageVector = Icons.Default.Error,
-                                    contentDescription = "Sudah Terpakai",
-                                    tint = Color(0xFFFF0055)
+                            else -> {
+                                errorMessage = null
+                                isLoading = true
+                                authViewModel.saveUsername(
+                                    username = cleanUsername,
+                                    onSuccess = {
+                                        isLoading = false
+                                        onUsernameCreated()
+                                    },
+                                    onError = { message ->
+                                        isLoading = false
+                                        errorMessage = message
+                                    }
                                 )
                             }
                         }
                     },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            focusManager.clearFocus()
-                            if (state.isUsernameAvailable == true) {
-                                viewModel.createUsername(uid, email, onProfileCreated)
-                            }
-                        }
-                    ),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = if (state.isUsernameAvailable == true) neonGreen else Color(0xFF2E334D),
-                        unfocusedBorderColor = Color(0xFF2E334D),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        cursorColor = neonGreen
-                    ),
-                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester)
-                )
-
-                // Feedback status label
-                if (state.usernameStatusMessage != null) {
-                    val statusColor = if (state.isUsernameAvailable == true) neonGreen else Color(0xFFFF6B6B)
-                    Text(
-                        text = state.usernameStatusMessage ?: "",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = statusColor,
-                        modifier = Modifier.padding(top = 8.dp, start = 4.dp)
+                contentAlignment = Alignment.Center
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
                     )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Tombol Konfirmasi Username
-                val isButtonEnabled = state.username.length >= 3 && !state.isLoading
-
-                Button(
-                    onClick = {
-                        focusManager.clearFocus()
-                        viewModel.createUsername(uid, email, onProfileCreated)
-                    },
-                    enabled = isButtonEnabled,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = neonGreen,
-                        disabledContainerColor = Color(0xFF1E2F26)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    if (state.isLoading) {
-                        CircularProgressIndicator(
-                            color = Color.Black,
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.5.dp
-                        )
-                    } else {
-                        Text(
-                            text = "SELESAI & MASUK KE NEONT",
-                            color = if (isButtonEnabled) Color.Black else Color(0xFF6B7280),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                    }
+                } else {
+                    Text(
+                        text = "Lanjutkan",
+                        color = Color.White,
+                        fontFamily = InterFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
                 }
             }
         }
