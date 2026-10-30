@@ -197,21 +197,15 @@ fun LoginScreen(
                     fontSize = 16.sp
                 )
             }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Belum memiliki akun? ", fontFamily = InterFontFamily, fontSize = 15.sp, color = Color(0xFF8E8E93))
+                TextButton(onClick = onNavigateToRegister) {
+                    Text("Daftar", fontFamily = InterFontFamily, fontSize = 15.sp, color = Color(0xFF0A84FF), fontWeight = FontWeight.SemiBold)
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        TextButton(
-            onClick = { authViewModel.signInAnonymously() },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Masuk Cepat Sebagai Tamu (Demo)",
-                fontFamily = InterFontFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp,
-                color = GhButtonPrimary
-            )
-        }
     }
 }
