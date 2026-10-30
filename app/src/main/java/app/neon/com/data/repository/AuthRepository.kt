@@ -153,4 +153,40 @@ class AuthRepository @Inject constructor(
         val elapsed = System.currentTimeMillis() - lastChange
         return if (elapsed >= cooldownMs) 0 else ((cooldownMs - elapsed) / (24 * 60 * 60 * 1000)).toInt() + 1
     }
+
+    suspend fun updateDisplayName(uid: String, newDisplayName: String): Result<Unit> {
+        return try {
+            val ref = firebaseDatabase.getReference("users").child(uid)
+            val updates = mapOf(
+                "displayName" to newDisplayName,
+                "lastDisplayNameChange" to System.currentTimeMillis()
+            )
+            ref.updateChildren(updates).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun updateUsername(uid: String, newUsername: String): Result<Unit> {
+        return try {
+            val sanitized = newUsername.trim().lowercase()
+            val usernameRef = firebaseDatabase.getReference("usernames").child(sanitized)
+            val snapshot = usernameRef.get().await()
+            if (snapshot.exists()) {
+                return Result.failure(Exception("Username sudah terpakai"))
+            }
+            val userRef = firebaseDatabase.getReference("users").child(uid)
+            val updates = mapOf(
+                "username" to sanitized,
+                "lastUsernameChange" to System.currentTimeMillis()
+            )
+            userRef.updateChildren(updates).await()
+            usernameRef.setValue(uid).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 }
