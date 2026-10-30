@@ -63,6 +63,7 @@ sealed class Screen(val route: String) {
     object Splash : Screen("splash")
     object Login : Screen("login")
     object Register : Screen("register")
+    object CreateUsername : Screen("create_username")
 
     object Main : Screen("main?tab={tab}") {
         fun createRoute(tab: String = "chat"): String = "main?tab=$tab"
