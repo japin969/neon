@@ -1,3 +1,4 @@
+import app.neon.com.ui.auth.ResetPasswordScreen
 package app.neon.com.ui.navigation
 
 import androidx.compose.runtime.getValue
@@ -63,6 +64,7 @@ sealed class Screen(val route: String) {
     object Splash : Screen("splash")
     object Login : Screen("login")
     object Register : Screen("register")
+    object ResetPassword : Screen("reset_password")
     object CreateUsername : Screen("create_username")
 
     object Main : Screen("main?tab={tab}") {
@@ -280,6 +282,9 @@ fun NeontNavGraph(
                 },
                 onNavigateToRegister = {
                     navController.navigate(Screen.Register.route)
+                },
+                onNavigateToResetPassword = {
+                    navController.navigate(Screen.ResetPassword.route)
                 }
             )
         }
@@ -297,7 +302,16 @@ fun NeontNavGraph(
             )
         }
 
-        composable(
+        
+        composable(Screen.ResetPassword.route) {
+            val authViewModel: app.neon.com.ui.auth.AuthViewModel = hiltViewModel()
+            ResetPasswordScreen(
+                authViewModel = authViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+composable(
             route = Screen.Main.route,
             arguments = listOf(
                 navArgument("tab") {

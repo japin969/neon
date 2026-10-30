@@ -1,6 +1,8 @@
 package app.neon.com.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -8,90 +10,37 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import app.neon.com.R
 
-// FontFamily Inter Lokal (tanpa perlu unduh dari Google)
 val InterFontFamily = FontFamily(
     Font(R.font.inter_regular, FontWeight.Normal),
     Font(R.font.inter_bold, FontWeight.Bold)
 )
 
-// ==========================================
-// 🍎 TYPOGRAPHY iOS DENGAN FONT INTER LOKAL
-// ==========================================
+private fun interStyle(weight: FontWeight, size: Int, lineHeight: Int) = TextStyle(
+    fontFamily = InterFontFamily,
+    fontWeight = weight,
+    fontSize = size.sp,
+    lineHeight = lineHeight.sp
+)
 
 val IosTypography = Typography(
-    displayLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 34.sp
-    ),
-    displayMedium = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 28.sp
-    ),
-    displaySmall = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 24.sp
-    ),
-    headlineLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 22.sp
-    ),
-    headlineMedium = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 20.sp
-    ),
-    headlineSmall = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp
-    ),
-    titleLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 17.sp
-    ),
-    titleMedium = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 16.sp
-    ),
-    titleSmall = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 15.sp
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp
-    ),
-    bodyMedium = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp
-    ),
-    bodySmall = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 12.sp
-    ),
-    labelLarge = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp
-    ),
-    labelMedium = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp
-    ),
-    labelSmall = TextStyle(
-        fontFamily = InterFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp
-    )
+    displayLarge = interStyle(FontWeight.Bold, 34, 41),
+    displayMedium = interStyle(FontWeight.Bold, 28, 34),
+    displaySmall = interStyle(FontWeight.Bold, 24, 30),
+    headlineLarge = interStyle(FontWeight.Bold, 22, 28),
+    headlineMedium = interStyle(FontWeight.Bold, 20, 26),
+    headlineSmall = interStyle(FontWeight.Bold, 18, 24),
+    titleLarge = interStyle(FontWeight.Bold, 17, 22),
+    titleMedium = interStyle(FontWeight.Bold, 16, 22),
+    titleSmall = interStyle(FontWeight.Bold, 14, 20),
+    bodyLarge = interStyle(FontWeight.Normal, 16, 22),
+    bodyMedium = interStyle(FontWeight.Normal, 14, 20),
+    bodySmall = interStyle(FontWeight.Normal, 12, 16),
+    labelLarge = interStyle(FontWeight.Bold, 16, 22),
+    labelMedium = interStyle(FontWeight.Bold, 12, 16),
+    labelSmall = interStyle(FontWeight.Normal, 11, 14)
 )
+
+val LocalIosTypography = staticCompositionLocalOf { IosTypography }
+
+@Composable
+fun IosSpecificTypography(): Typography = IosTypography

@@ -99,8 +99,7 @@ fun NeontTheme(
     }
 
     CompositionLocalProvider(
-        LocalIosColors provides customColors,
-        LocalIosTypography provides IosSpecificTypography()
+        LocalIosColors provides customColors
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

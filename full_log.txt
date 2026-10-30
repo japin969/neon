@@ -1,0 +1,139 @@
+build	Build Release APK	﻿2026-10-30T10:14:54.8429381Z ##[group]Run ./gradlew assembleRelease
+build	Build Release APK	2026-10-30T10:14:54.8430671Z ^[[36;1m./gradlew assembleRelease^[[0m
+build	Build Release APK	2026-10-30T10:14:54.8452282Z shell: /usr/bin/bash -e {0}
+build	Build Release APK	2026-10-30T10:14:54.8453321Z env:
+build	Build Release APK	2026-10-30T10:14:54.8454537Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.21-9/x64
+build	Build Release APK	2026-10-30T10:14:54.8456773Z   JAVA_HOME_17_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/17.0.21-9/x64
+build	Build Release APK	2026-10-30T10:14:54.8458427Z ##[endgroup]
+build	Build Release APK	2026-10-30T10:14:58.6221098Z Downloading https://services.gradle.org/distributions/gradle-8.9-bin.zip
+build	Build Release APK	2026-10-30T10:15:02.3804646Z ............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
+build	Build Release APK	2026-10-30T10:15:03.8664298Z 
+build	Build Release APK	2026-10-30T10:15:03.8665151Z Welcome to Gradle 8.9!
+build	Build Release APK	2026-10-30T10:15:03.8665706Z 
+build	Build Release APK	2026-10-30T10:15:03.8676699Z Here are the highlights of this release:
+build	Build Release APK	2026-10-30T10:15:03.8677345Z  - Enhanced Error and Warning Messages
+build	Build Release APK	2026-10-30T10:15:03.8677918Z  - IDE Integration Improvements
+build	Build Release APK	2026-10-30T10:15:03.8678510Z  - Daemon JVM Information
+build	Build Release APK	2026-10-30T10:15:03.8678861Z 
+build	Build Release APK	2026-10-30T10:15:03.8679235Z For more details see https://docs.gradle.org/8.9/release-notes.html
+build	Build Release APK	2026-10-30T10:15:03.8679576Z 
+build	Build Release APK	2026-10-30T10:15:04.1677573Z Starting a Gradle Daemon (subsequent builds will be faster)
+build	Build Release APK	2026-10-30T10:16:06.9751468Z > Task :app:buildKotlinToolingMetadata
+build	Build Release APK	2026-10-30T10:16:06.9817088Z > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+build	Build Release APK	2026-10-30T10:16:06.9856625Z > Task :app:preBuild UP-TO-DATE
+build	Build Release APK	2026-10-30T10:16:06.9887142Z > Task :app:preReleaseBuild UP-TO-DATE
+build	Build Release APK	2026-10-30T10:16:06.9907161Z > Task :compose-symphony:preBuild UP-TO-DATE
+build	Build Release APK	2026-10-30T10:16:06.9908346Z > Task :compose-symphony:preReleaseBuild UP-TO-DATE
+build	Build Release APK	2026-10-30T10:16:07.0655339Z > Task :app:generateReleaseResValues
+build	Build Release APK	2026-10-30T10:16:07.0656754Z > Task :compose-symphony:writeReleaseAarMetadata
+build	Build Release APK	2026-10-30T10:16:07.0665677Z > Task :app:injectCrashlyticsMappingFileIdRelease
+build	Build Release APK	2026-10-30T10:16:24.2667422Z > Task :app:checkReleaseAarMetadata
+build	Build Release APK	2026-10-30T10:16:24.3656721Z > Task :app:extractReleaseVersionControlInfo
+build	Build Release APK	2026-10-30T10:16:24.3657513Z > Task :app:injectCrashlyticsVersionControlInfoRelease
+build	Build Release APK	2026-10-30T10:16:24.3658086Z > Task :app:processReleaseGoogleServices
+build	Build Release APK	2026-10-30T10:16:24.3658580Z > Task :compose-symphony:generateReleaseResValues
+build	Build Release APK	2026-10-30T10:16:24.3659358Z > Task :compose-symphony:generateReleaseResources
+build	Build Release APK	2026-10-30T10:16:24.4658594Z > Task :compose-symphony:packageReleaseResources
+build	Build Release APK	2026-10-30T10:16:24.5677677Z > Task :app:mapReleaseSourceSetPaths
+build	Build Release APK	2026-10-30T10:16:24.5678530Z > Task :app:generateReleaseResources
+build	Build Release APK	2026-10-30T10:16:28.2670629Z > Task :app:packageReleaseResources
+build	Build Release APK	2026-10-30T10:16:29.5677065Z > Task :app:createReleaseCompatibleScreenManifests
+build	Build Release APK	2026-10-30T10:16:29.6656710Z > Task :app:extractDeepLinksRelease
+build	Build Release APK	2026-10-30T10:16:29.6686432Z > Task :compose-symphony:extractDeepLinksRelease
+build	Build Release APK	2026-10-30T10:16:29.6716236Z > Task :app:parseReleaseLocalResources
+build	Build Release APK	2026-10-30T10:16:29.6746568Z > Task :compose-symphony:checkKotlinGradlePluginConfigurationErrors SKIPPED
+build	Build Release APK	2026-10-30T10:16:29.7662757Z > Task :compose-symphony:parseReleaseLocalResources
+build	Build Release APK	2026-10-30T10:16:29.7707300Z > Task :compose-symphony:processReleaseManifest
+build	Build Release APK	2026-10-30T10:16:29.7764156Z > Task :compose-symphony:javaPreCompileRelease
+build	Build Release APK	2026-10-30T10:16:29.8668565Z > Task :compose-symphony:generateReleaseRFile
+build	Build Release APK	2026-10-30T10:16:30.3667782Z > Task :app:mergeReleaseResources
+build	Build Release APK	2026-10-30T10:16:30.7666511Z > Task :app:processReleaseMainManifest
+build	Build Release APK	2026-10-30T10:16:30.7686889Z > Task :app:processReleaseManifest
+build	Build Release APK	2026-10-30T10:16:38.4684622Z > Task :app:processReleaseManifestForPackage
+build	Build Release APK	2026-10-30T10:16:38.4756932Z > Task :app:javaPreCompileRelease
+build	Build Release APK	2026-10-30T10:16:38.9666860Z > Task :app:extractProguardFiles
+build	Build Release APK	2026-10-30T10:16:38.9716538Z > Task :compose-symphony:extractProguardFiles
+build	Build Release APK	2026-10-30T10:16:38.9766682Z > Task :compose-symphony:prepareLintJarForPublish
+build	Build Release APK	2026-10-30T10:16:39.0657243Z > Task :compose-symphony:mergeReleaseJniLibFolders
+build	Build Release APK	2026-10-30T10:16:39.0666533Z > Task :compose-symphony:mergeReleaseNativeLibs NO-SOURCE
+build	Build Release APK	2026-10-30T10:16:39.0716749Z > Task :compose-symphony:stripReleaseDebugSymbols NO-SOURCE
+build	Build Release APK	2026-10-30T10:16:39.0757681Z > Task :compose-symphony:copyReleaseJniLibsProjectAndLocalJars
+build	Build Release APK	2026-10-30T10:16:39.0786426Z > Task :compose-symphony:extractDeepLinksForAarRelease
+build	Build Release APK	2026-10-30T10:16:39.1657901Z > Task :compose-symphony:mergeReleaseShaders
+build	Build Release APK	2026-10-30T10:16:39.1659147Z > Task :compose-symphony:compileReleaseShaders NO-SOURCE
+build	Build Release APK	2026-10-30T10:16:39.1660091Z > Task :compose-symphony:generateReleaseAssets UP-TO-DATE
+build	Build Release APK	2026-10-30T10:16:39.1660868Z > Task :compose-symphony:packageReleaseAssets
+build	Build Release APK	2026-10-30T10:16:39.1661581Z > Task :compose-symphony:prepareReleaseArtProfile
+build	Build Release APK	2026-10-30T10:16:39.1662320Z > Task :compose-symphony:writeReleaseLintModelMetadata
+build	Build Release APK	2026-10-30T10:16:39.1663032Z > Task :app:mergeReleaseJniLibFolders
+build	Build Release APK	2026-10-30T10:16:39.2658414Z > Task :compose-symphony:copyReleaseJniLibsProjectOnly
+build	Build Release APK	2026-10-30T10:16:39.5660754Z > Task :app:mergeReleaseArtProfile
+build	Build Release APK	2026-10-30T10:16:41.1677071Z > Task :app:mergeReleaseNativeLibs
+build	Build Release APK	2026-10-30T10:16:41.2677102Z > Task :app:processReleaseResources
+build	Build Release APK	2026-10-30T10:16:47.3679116Z > Task :app:expandReleaseL8ArtProfileWildcards
+build	Build Release APK	2026-10-30T10:16:49.6686639Z 
+build	Build Release APK	2026-10-30T10:16:49.6746782Z > Task :app:stripReleaseDebugSymbols
+build	Build Release APK	2026-10-30T10:16:49.6807112Z Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so, libjingle_peerconnection_so.so.
+build	Build Release APK	2026-10-30T10:16:50.8696622Z 
+build	Build Release APK	2026-10-30T10:16:50.8727031Z > Task :app:mergeReleaseStartupProfile
+build	Build Release APK	2026-10-30T10:16:50.9677286Z > Task :app:extractReleaseNativeSymbolTables
+build	Build Release APK	2026-10-30T10:16:50.9692744Z > Task :app:mergeReleaseShaders
+build	Build Release APK	2026-10-30T10:16:50.9709970Z > Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+build	Build Release APK	2026-10-30T10:16:50.9736465Z > Task :app:compileReleaseShaders NO-SOURCE
+build	Build Release APK	2026-10-30T10:16:50.9737101Z > Task :app:generateReleaseAssets UP-TO-DATE
+build	Build Release APK	2026-10-30T10:16:51.3658649Z > Task :app:checkReleaseDuplicateClasses
+build	Build Release APK	2026-10-30T10:16:51.3696734Z > Task :app:mergeReleaseAssets
+build	Build Release APK	2026-10-30T10:16:51.3726406Z > Task :app:compressReleaseAssets
+build	Build Release APK	2026-10-30T10:16:51.9677050Z > Task :app:collectReleaseDependencies
+build	Build Release APK	2026-10-30T10:16:52.1656942Z > Task :app:sdkReleaseDependencyData
+build	Build Release APK	2026-10-30T10:16:53.3666779Z > Task :app:validateSigningRelease
+build	Build Release APK	2026-10-30T10:16:53.3698783Z > Task :app:convertLinkedResourcesToProtoRelease
+build	Build Release APK	2026-10-30T10:16:53.3736407Z > Task :app:writeReleaseAppMetadata
+build	Build Release APK	2026-10-30T10:16:53.3766558Z > Task :app:writeReleaseSigningConfigVersions
+build	Build Release APK	2026-10-30T10:16:53.6655640Z > Task :compose-symphony:mapReleaseSourceSetPaths
+build	Build Release APK	2026-10-30T10:16:54.2667121Z > Task :compose-symphony:mergeReleaseResources
+build	Build Release APK	2026-10-30T10:16:55.2680025Z > Task :compose-symphony:verifyReleaseResources
+build	Build Release APK	2026-10-30T10:16:55.9656974Z > Task :compose-symphony:compileReleaseKotlin
+build	Build Release APK	2026-10-30T10:16:55.9657908Z > Task :compose-symphony:compileReleaseJavaWithJavac NO-SOURCE
+build	Build Release APK	2026-10-30T10:16:55.9658995Z > Task :compose-symphony:bundleLibRuntimeToJarRelease
+build	Build Release APK	2026-10-30T10:16:55.9666646Z > Task :compose-symphony:bundleLibCompileToJarRelease
+build	Build Release APK	2026-10-30T10:16:55.9667538Z > Task :compose-symphony:processReleaseJavaRes
+build	Build Release APK	2026-10-30T10:17:02.4667031Z > Task :compose-symphony:createFullJarRelease
+build	Build Release APK	2026-10-30T10:17:04.3706939Z > Task :compose-symphony:generateReleaseLintModel
+build	Build Release APK	2026-10-30T10:17:11.3684866Z > Task :compose-symphony:extractReleaseAnnotations
+build	Build Release APK	2026-10-30T10:17:11.3766787Z > Task :compose-symphony:mergeReleaseGeneratedProguardFiles
+build	Build Release APK	2026-10-30T10:17:11.3806430Z 
+build	Build Release APK	2026-10-30T10:17:11.3848756Z > Task :compose-symphony:mergeReleaseConsumerProguardFiles
+build	Build Release APK	2026-10-30T10:17:11.3888168Z Supplied consumer proguard configuration does not exist: /home/runner/work/neon/neon/compose-symphony/consumer-rules.pro
+build	Build Release APK	2026-10-30T10:17:11.5666771Z 
+build	Build Release APK	2026-10-30T10:17:11.5696778Z > Task :compose-symphony:generateReleaseLintVitalModel
+build	Build Release APK	2026-10-30T10:17:11.5697707Z > Task :compose-symphony:mergeReleaseJavaResource
+build	Build Release APK	2026-10-30T10:17:11.5723975Z > Task :compose-symphony:exportReleaseConsumerProguardFiles
+build	Build Release APK	2026-10-30T10:17:11.5746521Z > Task :compose-symphony:syncReleaseLibJars
+build	Build Release APK	2026-10-30T10:17:11.6654539Z > Task :compose-symphony:bundleReleaseLocalLintAar
+build	Build Release APK	2026-10-30T10:17:11.6655317Z > Task :compose-symphony:bundleReleaseAar
+build	Build Release APK	2026-10-30T10:17:11.6656141Z > Task :compose-symphony:assembleRelease
+build	Build Release APK	2026-10-30T10:17:11.9667424Z > Task :app:kspReleaseKotlin
+build	Build Release APK	2026-10-30T10:17:25.2656223Z 
+build	Build Release APK	2026-10-30T10:17:25.2697560Z e: file:///home/runner/work/neon/neon/app/src/main/java/app/neon/com/ui/theme/Theme.kt:103:9 Unresolved reference 'LocalIosTypography'.
+build	Build Release APK	2026-10-30T10:17:25.2698727Z > Task :app:compileReleaseKotlin FAILED
+build	Build Release APK	2026-10-30T10:17:25.2724850Z e: file:///home/runner/work/neon/neon/app/src/main/java/app/neon/com/ui/theme/Theme.kt:103:37 Unresolved reference 'IosSpecificTypography'.
+build	Build Release APK	2026-10-30T10:17:29.5656980Z 
+build	Build Release APK	2026-10-30T10:17:29.5676984Z > Task :compose-symphony:lintVitalAnalyzeRelease
+build	Build Release APK	2026-10-30T10:17:29.6653917Z 
+build	Build Release APK	2026-10-30T10:17:29.6691955Z FAILURE: Build failed with an exception.
+build	Build Release APK	2026-10-30T10:17:29.6692526Z 77 actionable tasks: 77 executed
+build	Build Release APK	2026-10-30T10:17:29.6716199Z 
+build	Build Release APK	2026-10-30T10:17:29.6746504Z * What went wrong:
+build	Build Release APK	2026-10-30T10:17:29.6747553Z Execution failed for task ':app:compileReleaseKotlin'.
+build	Build Release APK	2026-10-30T10:17:29.6777186Z > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+build	Build Release APK	2026-10-30T10:17:29.6794288Z    > Compilation error. See log for more details
+build	Build Release APK	2026-10-30T10:17:29.6827318Z 
+build	Build Release APK	2026-10-30T10:17:29.6833977Z * Try:
+build	Build Release APK	2026-10-30T10:17:29.6916943Z > Run with --stacktrace option to get the stack trace.
+build	Build Release APK	2026-10-30T10:17:29.6926459Z > Run with --info or --debug option to get more log output.
+build	Build Release APK	2026-10-30T10:17:29.6946462Z > Run with --scan to get full insights.
+build	Build Release APK	2026-10-30T10:17:29.7024298Z > Get more help at https://help.gradle.org.
+build	Build Release APK	2026-10-30T10:17:29.7025077Z 
+build	Build Release APK	2026-10-30T10:17:29.7025237Z BUILD FAILED in 2m 31s
+build	Build Release APK	2026-10-30T10:17:30.1930340Z ##[error]Process completed with exit code 1.
