@@ -272,7 +272,7 @@ fun NeontNavGraph(
         }
 
         composable(Screen.Login.route) {
-            val authViewModel: app.neon.com.ui.viewmodel.AuthViewModel = hiltViewModel()
+            val authViewModel: app.neon.com.ui.auth.AuthViewModel = hiltViewModel()
             LoginScreen(
                 authViewModel = authViewModel,
                 onLoginSuccess = {
