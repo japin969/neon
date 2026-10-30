@@ -1,349 +1,170 @@
 package app.neon.com.ui.auth
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.neon.com.ui.theme.*
-import app.neon.com.ui.auth.RegisterViewModel
+import app.neon.com.ui.theme.InterFontFamily
 
-@OptIn(ExperimentalMaterial3Api::class)
+private val BackgroundColor = Color(0xFF1C1C1E)
+private val SurfaceColor = Color(0xFF2C2C2E)
+private val PrimaryColor = Color(0xFF0A84FF)
+private val SecondaryTextColor = Color(0xFF8E8E93)
+private val BorderColor = Color(0xFF3A3A3C)
+private val ErrorColor = Color(0xFFFF453A)
+private val CardShape = RoundedCornerShape(16.dp)
+private val InputShape = RoundedCornerShape(12.dp)
+private val ButtonShape = RoundedCornerShape(12.dp)
+
 @Composable
 fun RegisterScreen(
-    viewModel: RegisterViewModel,
-    onNavigateToLogin: () -> Unit,
-    onRegisterSuccess: (email: String) -> Unit
+    authViewModel: AuthViewModel,
+    onRegisterSuccess: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {}
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val errorMessage by authViewModel.errorMessage.collectAsState()
+    val isLoading by authViewModel.isLoading.collectAsState()
     val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(uiState.registeredUser) {
-        uiState.registeredUser?.email?.let { email ->
-            onRegisterSuccess(email)
-        }
-    }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    val cardVisible = remember { MutableTransitionState(false).apply { targetState = true } }
+    val canSubmit = email.isNotBlank() && password.isNotEmpty() && confirmPassword.isNotEmpty() && !isLoading
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(GhBackground)
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+    LaunchedEffect(Unit) { authViewModel.clearError() }
+
+    val textStyle = TextStyle(fontFamily = InterFontFamily, fontSize = 16.sp, color = Color.White)
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+        focusedBorderColor = PrimaryColor, unfocusedBorderColor = BorderColor, errorBorderColor = ErrorColor,
+        cursorColor = PrimaryColor,
+        focusedPlaceholderColor = SecondaryTextColor, unfocusedPlaceholderColor = SecondaryTextColor,
+        focusedContainerColor = BackgroundColor, unfocusedContainerColor = BackgroundColor, errorContainerColor = BackgroundColor
+    )
+    val visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()
+
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize().background(BackgroundColor)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { focusManager.clearFocus() }
+            .imePadding()
     ) {
+        val minContentHeight = maxHeight
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = 420.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                .heightIn(min = minContentHeight).padding(24.dp),
+            verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header Logo
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .background(GhSurface, shape = RoundedCornerShape(12.dp))
-                    .border(1.dp, GhBorder, shape = RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "",
-                    fontSize = 24.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Create your account",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = GhTextPrimary
-            )
-
-            Text(
-                text = "Pendaftaran dengan Standar Keamanan Tinggi",
-                fontSize = 13.sp,
-                color = GhTextSecondary,
-                modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
-            )
-
-            // Card Container
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = GhSurface),
-                border = CardDefaults.outlinedCardBorder().copy(
-                    brush = androidx.compose.ui.graphics.SolidColor(GhBorder),
-                    width = 1.dp
-                )
-            ) {
+            AnimatedVisibility(visibleState = cardVisible, enter = fadeIn(tween(400)) + slideInVertically(tween(400)) { it / 12 }) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp)
+                    modifier = Modifier.fillMaxWidth().shadow(8.dp, CardShape).background(SurfaceColor, CardShape).padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // General Error Banner
-                    if (uiState.generalError != null) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(GhErrorBackground, shape = RoundedCornerShape(6.dp))
-                                .border(1.dp, GhErrorRed, shape = RoundedCornerShape(6.dp))
-                                .padding(12.dp)
-                        ) {
-                            Text(
-                                text = uiState.generalError ?: "",
-                                color = GhErrorRed,
-                                fontSize = 13.sp,
-                                lineHeight = 18.sp
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
+                    Text("Buat Akun", color = Color.White, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 24.sp, textAlign = TextAlign.Center)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Daftar untuk mulai menggunakan Neont.", color = SecondaryTextColor, fontFamily = InterFontFamily, fontSize = 14.sp, textAlign = TextAlign.Center)
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    // Field 1: Email
-                    Text(
-                        text = "Email address",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GhTextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
                     OutlinedTextField(
-                        value = uiState.email,
-                        onValueChange = { viewModel.onEmailChanged(it) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        isError = uiState.emailError != null,
-                        placeholder = {
-                            Text(text = "nama@domain.com", color = GhTextSecondary)
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        ),
-                        shape = RoundedCornerShape(6.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = GhBackground,
-                            unfocusedContainerColor = GhBackground,
-                            disabledContainerColor = GhBackground,
-                            focusedBorderColor = GhBorderFocus,
-                            unfocusedBorderColor = GhBorder,
-                            errorBorderColor = GhErrorRed,
-                            focusedTextColor = GhTextPrimary,
-                            unfocusedTextColor = GhTextPrimary
-                        )
+                        value = email, onValueChange = { email = it; if (errorMessage != null) authViewModel.clearError() },
+                        modifier = Modifier.fillMaxWidth(), placeholder = { Text("Email", fontFamily = InterFontFamily) },
+                        textStyle = textStyle, singleLine = true, isError = errorMessage != null,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                        shape = InputShape, colors = fieldColors
                     )
-                    if (uiState.emailError != null) {
-                        Text(
-                            text = uiState.emailError ?: "",
-                            color = GhErrorRed,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 4.dp, start = 2.dp)
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Field 2: Password
-                    Text(
-                        text = "Password (min. 8 karakter, A-Z, a-z, 0-9)",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GhTextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
                     OutlinedTextField(
-                        value = uiState.password,
-                        onValueChange = { viewModel.onPasswordChanged(it) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        isError = uiState.passwordError != null,
-                        placeholder = {
-                            Text(text = "Minimal 8 karakter kombinasi", color = GhTextSecondary)
-                        },
-                        visualTransformation = if (uiState.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        value = password, onValueChange = { password = it; if (errorMessage != null) authViewModel.clearError() },
+                        modifier = Modifier.fillMaxWidth(), placeholder = { Text("Password", fontFamily = InterFontFamily) },
+                        textStyle = textStyle, singleLine = true, isError = errorMessage != null,
+                        visualTransformation = visualTransformation,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
                         trailingIcon = {
-                            IconButton(onClick = { viewModel.togglePasswordVisibility() }) {
-                                Icon(
-                                    imageVector = if (uiState.isPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                    contentDescription = if (uiState.isPasswordVisible) "Sembunyikan password" else "Tampilkan password",
-                                    tint = GhTextSecondary
-                                )
+                            TextButton(onClick = { passwordVisible = !passwordVisible }, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                                Text(if (passwordVisible) "Sembunyikan" else "Tampilkan", color = PrimaryColor, fontFamily = InterFontFamily, fontSize = 12.sp)
                             }
                         },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        ),
-                        shape = RoundedCornerShape(6.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = GhBackground,
-                            unfocusedContainerColor = GhBackground,
-                            disabledContainerColor = GhBackground,
-                            focusedBorderColor = GhBorderFocus,
-                            unfocusedBorderColor = GhBorder,
-                            errorBorderColor = GhErrorRed,
-                            focusedTextColor = GhTextPrimary,
-                            unfocusedTextColor = GhTextPrimary
-                        )
+                        shape = InputShape, colors = fieldColors
                     )
-                    if (uiState.passwordError != null) {
-                        Text(
-                            text = uiState.passwordError ?: "",
-                            color = GhErrorRed,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 4.dp, start = 2.dp)
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Field 3: Konfirmasi Password
-                    Text(
-                        text = "Konfirmasi Password",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GhTextPrimary
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
                     OutlinedTextField(
-                        value = uiState.confirmPassword,
-                        onValueChange = { viewModel.onConfirmPasswordChanged(it) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        isError = uiState.confirmPasswordError != null,
-                        placeholder = {
-                            Text(text = "Ulangi password di atas", color = GhTextSecondary)
-                        },
-                        visualTransformation = if (uiState.isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        trailingIcon = {
-                            IconButton(onClick = { viewModel.toggleConfirmPasswordVisibility() }) {
-                                Icon(
-                                    imageVector = if (uiState.isConfirmPasswordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                                    contentDescription = if (uiState.isConfirmPasswordVisible) "Sembunyikan password" else "Tampilkan password",
-                                    tint = GhTextSecondary
-                                )
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
+                        value = confirmPassword, onValueChange = { confirmPassword = it; if (errorMessage != null) authViewModel.clearError() },
+                        modifier = Modifier.fillMaxWidth(), placeholder = { Text("Konfirmasi Password", fontFamily = InterFontFamily) },
+                        textStyle = textStyle, singleLine = true, isError = errorMessage != null,
+                        visualTransformation = visualTransformation,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            if (canSubmit) {
                                 focusManager.clearFocus()
-                                viewModel.register()
+                                authViewModel.signUpWithEmail(email, password, confirmPassword, onSuccess = onRegisterSuccess)
                             }
-                        ),
-                        shape = RoundedCornerShape(6.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = GhBackground,
-                            unfocusedContainerColor = GhBackground,
-                            disabledContainerColor = GhBackground,
-                            focusedBorderColor = GhBorderFocus,
-                            unfocusedBorderColor = GhBorder,
-                            errorBorderColor = GhErrorRed,
-                            focusedTextColor = GhTextPrimary,
-                            unfocusedTextColor = GhTextPrimary
-                        )
+                        }),
+                        shape = InputShape, colors = fieldColors
                     )
-                    if (uiState.confirmPasswordError != null) {
-                        Text(
-                            text = uiState.confirmPasswordError ?: "",
-                            color = GhErrorRed,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(top = 4.dp, start = 2.dp)
-                        )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Minimal 8 karakter, mengandung huruf besar, huruf kecil, dan angka.", color = SecondaryTextColor, fontFamily = InterFontFamily, fontSize = 12.sp, modifier = Modifier.fillMaxWidth())
+
+                    errorMessage?.let { message ->
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(message, color = ErrorColor, fontFamily = InterFontFamily, fontSize = 13.sp, modifier = Modifier.fillMaxWidth())
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
-
-                    // Tombol Register (#1F6FEB, rounded 6dp)
                     Button(
                         onClick = {
                             focusManager.clearFocus()
-                            viewModel.register()
+                            authViewModel.signUpWithEmail(email, password, confirmPassword, onSuccess = onRegisterSuccess)
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(44.dp),
-                        enabled = !uiState.isLoading,
-                        shape = RoundedCornerShape(6.dp),
+                        enabled = canSubmit, modifier = Modifier.fillMaxWidth().height(50.dp), shape = ButtonShape,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = GhButtonPrimary,
-                            contentColor = GhTextPrimary,
-                            disabledContainerColor = GhButtonPrimary.copy(alpha = 0.5f)
+                            containerColor = PrimaryColor, contentColor = Color.White,
+                            disabledContainerColor = PrimaryColor.copy(alpha = 0.4f), disabledContentColor = Color.White.copy(alpha = 0.6f)
                         )
                     ) {
-                        if (uiState.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = GhTextPrimary,
-                                strokeWidth = 2.dp
-                            )
+                        if (isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
                         } else {
-                            Text(
-                                text = "Create account",
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp
-                            )
+                            Text("Daftar", fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                         }
                     }
-                }
-            }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Box Navigasi ke Halaman Login
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(GhSurface, shape = RoundedCornerShape(8.dp))
-                    .border(1.dp, GhBorder, shape = RoundedCornerShape(8.dp))
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Sudah memiliki akun? ",
-                        fontSize = 13.sp,
-                        color = GhTextSecondary
-                    )
-                    Text(
-                        text = "Masuk di sini",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GhTextLink,
-                        modifier = Modifier.clickable { onNavigateToLogin() }
-                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Sudah memiliki akun?", color = SecondaryTextColor, fontFamily = InterFontFamily, fontSize = 14.sp)
+                        TextButton(onClick = onNavigateToLogin, enabled = !isLoading, contentPadding = PaddingValues(horizontal = 6.dp)) {
+                            Text("Masuk", color = PrimaryColor, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        }
+                    }
                 }
             }
         }

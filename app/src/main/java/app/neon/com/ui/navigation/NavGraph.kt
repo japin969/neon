@@ -277,6 +277,9 @@ fun NeontNavGraph(
                 authViewModel = authViewModel,
                 onLoginSuccess = {
                     navigationActions.navigateToMain("chat")
+                },
+                onNavigateToRegister = {
+                    navController.navigate(Screen.Register.route)
                 }
             )
         }
