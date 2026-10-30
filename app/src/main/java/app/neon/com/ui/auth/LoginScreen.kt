@@ -1,36 +1,25 @@
-import androidx.compose.foundation.layout.Row
 package app.neon.com.ui.auth
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Mail
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,22 +27,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.neon.com.ui.theme.GhBackground
-import app.neon.com.ui.theme.GhBorder
-import app.neon.com.ui.theme.GhButtonPrimary
-import app.neon.com.ui.theme.GhSurface
-import app.neon.com.ui.theme.GhTextPrimary
-import app.neon.com.ui.theme.GhTextSecondary
 import app.neon.com.ui.theme.InterFontFamily
 import app.neon.com.ui.theme.bouncyClickable
-import app.neon.com.ui.viewmodel.AuthViewModel
+
+private val BackgroundColor = Color(0xFF1C1C1E)
+private val SurfaceColor = Color(0xFF2C2C2E)
+private val PrimaryColor = Color(0xFF0A84FF)
+private val SecondaryTextColor = Color(0xFF8E8E93)
+private val ErrorColor = Color(0xFFFF453A)
 
 @Composable
 fun LoginScreen(
@@ -65,149 +55,131 @@ fun LoginScreen(
     val errorMessage by authViewModel.errorMessage.collectAsState()
     val isLoading by authViewModel.isLoading.collectAsState()
 
-    var email by remember { mutableStateOf("user@neon.com") }
-    var password by remember { mutableStateOf("password123") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(GhBackground)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .imePadding()
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) onLoginSuccess()
+    }
+
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color.White,
+        unfocusedTextColor = Color.White,
+        focusedBorderColor = PrimaryColor,
+        unfocusedBorderColor = SecondaryTextColor,
+        cursorColor = PrimaryColor,
+        focusedLabelColor = PrimaryColor,
+        unfocusedLabelColor = SecondaryTextColor,
+        focusedContainerColor = BackgroundColor,
+        unfocusedContainerColor = BackgroundColor
+    )
+
+    Box(
+        modifier = Modifier.fillMaxSize().background(BackgroundColor).padding(24.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(CircleShape)
-                .background(GhSurface)
-                .border(1.dp, GhBorder, CircleShape),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier.fillMaxWidth().background(SurfaceColor, RoundedCornerShape(20.dp)).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(
-                imageVector = Icons.Default.Shield,
-                contentDescription = "Security",
-                tint = GhButtonPrimary,
-                modifier = Modifier.size(36.dp)
+            Box(
+                modifier = Modifier.size(72.dp).background(PrimaryColor, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "N", color = Color.White, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 32.sp)
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(text = "Selamat Datang", color = Color.White, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 24.sp, textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = "Masuk untuk melanjutkan ke Neont.", color = SecondaryTextColor, fontFamily = InterFontFamily, fontSize = 14.sp, textAlign = TextAlign.Center)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = {
+                    email = it
+                    if (errorMessage != null) authViewModel.clearError()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Email", fontFamily = InterFontFamily) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors
             )
-        }
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(
-            text = "Selamat Datang di Neon",
-            fontFamily = InterFontFamily,
-            fontWeight = FontWeight.Bold,
-            fontSize = 24.sp,
-            color = GhTextPrimary
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Text(
-            text = "Enkripsi End-to-End & Audio Eksklusif",
-            fontFamily = InterFontFamily,
-            fontSize = 14.sp,
-            color = GhTextSecondary
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email", fontFamily = InterFontFamily) },
-            leadingIcon = {
-                Icon(Icons.Default.Mail, contentDescription = null, tint = GhTextSecondary)
-            },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = GhSurface,
-                unfocusedContainerColor = GhSurface,
-                focusedBorderColor = GhButtonPrimary,
-                unfocusedBorderColor = GhBorder,
-                focusedTextColor = GhTextPrimary,
-                unfocusedTextColor = GhTextPrimary
-            )
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Kata Sandi", fontFamily = InterFontFamily) },
-            leadingIcon = {
-                Icon(Icons.Default.Lock, contentDescription = null, tint = GhTextSecondary)
-            },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = GhSurface,
-                unfocusedContainerColor = GhSurface,
-                focusedBorderColor = GhButtonPrimary,
-                unfocusedBorderColor = GhBorder,
-                focusedTextColor = GhTextPrimary,
-                unfocusedTextColor = GhTextPrimary
-            )
-        )
-
-        if (errorMessage != null) {
             Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = errorMessage ?: "",
-                fontFamily = InterFontFamily,
-                fontSize = 13.sp,
-                color = Color(0xFFFF453A)
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = {
+                    password = it
+                    if (errorMessage != null) authViewModel.clearError()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Password", fontFamily = InterFontFamily) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    Text(
+                        text = if (passwordVisible) "Sembunyikan" else "Tampilkan",
+                        color = PrimaryColor,
+                        fontFamily = InterFontFamily,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(end = 12.dp).bouncyClickable { passwordVisible = !passwordVisible }
+                    )
+                },
+                shape = RoundedCornerShape(12.dp),
+                colors = fieldColors
             )
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = { authViewModel.signInWithEmail(email, password) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .bouncyClickable { authViewModel.signInWithEmail(email, password) },
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = GhButtonPrimary,
-                contentColor = Color.White
-            ),
-            enabled = !isLoading
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    color = Color.White,
-                    strokeWidth = 2.dp
-                )
-            } else {
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Masuk",
+                    text = errorMessage.orEmpty(),
+                    color = ErrorColor,
                     fontFamily = InterFontFamily,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
+                    fontSize = 13.sp,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Belum memiliki akun? ", fontFamily = InterFontFamily, fontSize = 15.sp, color = Color(0xFF8E8E93))
-                TextButton(onClick = onNavigateToRegister) {
-                    Text("Daftar", fontFamily = InterFontFamily, fontSize = 15.sp, color = Color(0xFF0A84FF), fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .alpha(if (isLoading) 0.6f else 1f)
+                    .background(PrimaryColor, RoundedCornerShape(12.dp))
+                    .bouncyClickable {
+                        if (!isLoading) authViewModel.signInWithEmail(email, password)
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
+                } else {
+                    Text(text = "Masuk", color = Color.White, fontFamily = InterFontFamily, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                 }
             }
-        }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "Belum memiliki akun? ", color = SecondaryTextColor, fontFamily = InterFontFamily, fontSize = 14.sp)
+                Text(
+                    text = "Daftar",
+                    color = PrimaryColor,
+                    fontFamily = InterFontFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    modifier = Modifier.bouncyClickable { onNavigateToRegister() }
+                )
+            }
+        }
     }
 }
