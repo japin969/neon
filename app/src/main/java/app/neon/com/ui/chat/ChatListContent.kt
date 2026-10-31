@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -74,7 +75,7 @@ enum class LastMessageTick { Sent, Read }
 
 private val SwipePinColor = Color(0xFF0A84FF)
 private val ReadTickColor = Color(0xFF34B7F1)
-private val DividerInset = 80.dp
+private val DividerInset = 72.dp
 private val StringSetSaver = listSaver<Set<String>, String>(
     save = { it.toList() },
     restore = { it.toSet() }
@@ -92,12 +93,13 @@ fun ChatListContent(
     onPinChange: (ChatItem, Boolean) -> Unit = { _, _ -> },
     onMuteChange: (ChatItem, Boolean) -> Unit = { _, _ -> },
     onArchiveChange: (ChatItem, Boolean) -> Unit = { _, _ -> },
-    onDelete: (ChatItem) -> Unit = {}
+    onDelete: (ChatItem) -> Unit = {},
+    onNeonAiClick: () -> Unit = {}
 ) {
     val palette = neontChatPalette()
     val focusManager = LocalFocusManager.current
     var query by rememberSaveable { mutableStateOf("") }
-    var isSearchVisible by rememberSaveable { mutableStateOf(true) }
+    var isSearchVisible by rememberSaveable { mutableStateOf(false) }
     var pinnedIds by rememberSaveable(stateSaver = StringSetSaver) { mutableStateOf(emptySet<String>()) }
     var mutedIds by rememberSaveable(stateSaver = StringSetSaver) { mutableStateOf(emptySet<String>()) }
     var archivedIds by rememberSaveable(stateSaver = StringSetSaver) { mutableStateOf(emptySet<String>()) }
@@ -192,12 +194,12 @@ fun ChatListContent(
             }
         }
         FloatingActionButton(
-            onClick = onNewChatClick,
+            onClick = onNeonAiClick,
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).size(56.dp),
             shape = CircleShape,
             containerColor = palette.primary,
             contentColor = Color.White
-        ) { Icon(imageVector = Icons.Default.Add, contentDescription = "Chat baru") }
+        ) { Icon(imageVector = Icons.Default.Star, contentDescription = "Neon AI") }
     }
 
     pendingDelete?.let { chat ->
@@ -365,7 +367,7 @@ private fun ChatListRow(
                             onClick = onClick,
                             onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onLongClick() }
                         )
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     NeontAvatar(name = chat.chatName, size = 52.dp, isOnline = false, ringColor = palette.listBackground)

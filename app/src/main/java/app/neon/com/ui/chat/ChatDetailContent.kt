@@ -206,7 +206,31 @@ fun ChatDetailContent(
             )
         }
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            LazyColumn(
+            if (messages.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text("✨", fontSize = 64.sp)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Neon AI", color = palette.textPrimary, style = MaterialTheme.typography.headlineMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Ada yang bisa saya bantu hari ini?", color = palette.textSecondary, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(modifier = Modifier.height(32.dp))
+                    val prompts = listOf("Ide konten kreatif", "Cara mengatur waktu", "Buatkan puisi singkat")
+                    prompts.forEach { prompt ->
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clip(RoundedCornerShape(12.dp))
+                                .background(palette.surface).clickable { input = prompt; send() }
+                                .padding(16.dp)
+                        ) {
+                            Text(prompt, color = palette.textPrimary, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            } else {
+                LazyColumn(
                 state = listState, reverseLayout = true,
                 modifier = Modifier.fillMaxSize().clickable(
                     interactionSource = remember { MutableInteractionSource() }, indication = null
@@ -243,6 +267,7 @@ fun ChatDetailContent(
                         }
                     }
                 }
+            }
             }
             androidx.compose.animation.AnimatedVisibility(
                 visible = showScrollToBottom,

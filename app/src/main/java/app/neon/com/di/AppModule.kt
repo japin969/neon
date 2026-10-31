@@ -8,6 +8,9 @@ import app.neon.com.data.repository.GroupRepository
 import app.neon.com.data.repository.MusicRepository
 import app.neon.com.data.repository.SocialRepository
 import app.neon.com.data.webrtc.WebRTCClient
+import app.neon.com.data.network.NexaDevApiService
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -67,5 +70,20 @@ object AppModule {
         @ApplicationContext context: Context
     ): WebRTCClient {
         return WebRTCClient(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://api.nexadev.my.id/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideNexaDevApiService(retrofit: Retrofit): NexaDevApiService {
+        return retrofit.create(NexaDevApiService::class.java)
     }
 }

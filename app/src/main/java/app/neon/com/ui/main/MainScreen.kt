@@ -42,6 +42,7 @@ import app.neon.com.ui.viewmodel.MusicViewModel
 fun MainScreen(
     initialTab: String = "chat",
     onNavigateToChatDetail: (chatId: String, recipientId: String, isGroup: Boolean, chatName: String) -> Unit,
+    onNavigateToNeonAi: () -> Unit = {},
     onNavigateToCreateGroup: () -> Unit,
     onNavigateToMusicPlayer: () -> Unit,
     onNavigateToStory: (userId: String) -> Unit,
@@ -103,7 +104,8 @@ fun MainScreen(
             when (currentTab) {
                 "chat" -> {
                     ChatListScreen(
-                        onChatClick = { chatId -> onNavigateToChatDetail(chatId, "", false, "") }
+                        onChatClick = { chatId -> onNavigateToChatDetail(chatId, "", false, "") },
+                        onNavigateToNeonAi = onNavigateToNeonAi
                     )
                 }
                 "music" -> {

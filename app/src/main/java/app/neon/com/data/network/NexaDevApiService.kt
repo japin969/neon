@@ -9,6 +9,9 @@ interface NexaDevApiService {
 
     @GET("api/ytplay")
     suspend fun searchYoutube(@Query("q") query: String): NexaDevResponse
+
+    @GET("ai/gpt4")
+    suspend fun askAi(@Query("q") query: String): NexaDevChatResponse
 }
 
 data class NexaDevResponse(
@@ -22,4 +25,14 @@ data class NexaDevData(
     val thumbnail: String = "",
     val url: String = "",
     val duration: String = ""
+)
+
+data class NexaDevChatResponse(
+    val author: String = "",
+    val status: Boolean = false,
+    val data: NexaDevChatData? = null
+)
+
+data class NexaDevChatData(
+    val message: String = ""
 )

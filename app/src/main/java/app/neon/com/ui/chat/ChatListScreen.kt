@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -60,10 +61,12 @@ import coil.request.ImageRequest
 fun ChatListScreen(
     onChatClick: (chatId: String) -> Unit = {},
     onNavigateToMusic: () -> Unit = {},
-    onLogoutClick: () -> Unit = {}
+    onLogoutClick: () -> Unit = {},
+    onNavigateToNeonAi: () -> Unit = {}
 ) {
     val listState = rememberLazyListState()
     var searchQuery by remember { mutableStateOf("") }
+    var showAiDialog by remember { mutableStateOf(false) }
 
     val initialChats = remember {
         val now = System.currentTimeMillis()
@@ -88,6 +91,11 @@ fun ChatListScreen(
         ) {
             Text("Chats", fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 34.sp, color = Color(0xFF111827))
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(38.dp).clip(CircleShape).background(Color(0xFFE8EDF2)).border(0.5.dp, Color(0xFFE3E8EF), CircleShape).bouncyClickable(onClick = { showAiDialog = true }),
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Default.Star, "Neon AI", tint = Color(0xFF1F2328), modifier = Modifier.size(20.dp)) }
+                Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier = Modifier.size(38.dp).clip(CircleShape).background(Color(0xFFE8EDF2)).border(0.5.dp, Color(0xFFE3E8EF), CircleShape).bouncyClickable(onClick = onNavigateToMusic),
                     contentAlignment = Alignment.Center
@@ -124,6 +132,22 @@ fun ChatListScreen(
                 ChatConversationItem(chat = chat, onClick = { onChatClick(chat.id) })
                 Spacer(modifier = Modifier.height(10.dp))
             }
+        }
+    }
+
+    if (showAiDialog) {
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showAiDialog = false },
+            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            val aiViewModel: app.neon.com.ui.viewmodel.ChatViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+            app.neon.com.ui.chat.ChatDetailScreen(
+                chatViewModel = aiViewModel,
+                chatId = app.neon.com.ui.viewmodel.ChatViewModel.NEON_AI_CHAT_ID,
+                chatPartnerName = "Neon AI",
+                chatPartnerAvatar = "",
+                onBackClick = { showAiDialog = false }
+            )
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.neon.com.data.model.ChatMessage
 import app.neon.com.data.repository.ChatRepository
+import app.neon.com.data.network.NexaDevApiService
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +20,8 @@ import kotlinx.coroutines.launch
  * - editMessage(chatId, msgId, newText)
  */
 class ChatViewModel(
-    private val repository: ChatRepository = ChatRepository()
+    private val repository: ChatRepository = ChatRepository(),
+    private val api: NexaDevApiService? = null
 ) : ViewModel() {
 
     private val auth: FirebaseAuth? = runCatching { FirebaseAuth.getInstance() }.getOrNull()
@@ -49,6 +51,12 @@ class ChatViewModel(
      */
     fun loadChat(chatId: String) {
         currentChatId = chatId
+        if (chatId == NEON_AI_CHAT_ID) {
+            if (_messages.value.firstOrNull()?.chatId != NEON_AI_CHAT_ID) {
+                _messages.value = emptyList()
+            }
+            return
+        }
         viewModelScope.launch {
             _isLoading.value = true
             repository.observeMessages(chatId, currentUserId).collectLatest { list ->
@@ -64,18 +72,45 @@ class ChatViewModel(
     fun sendMessage(chatId: String, text: String) {
         if (text.trim().isEmpty()) return
         val targetChat = chatId.ifEmpty { currentChatId }
-        val replyId = _replyMessage.value?.msgId
 
+        if (targetChat == NEON_AI_CHAT_ID) {
+            val userMsg = ChatMessage(
+                msgId = "u_${System.currentTimeMillis()}",
+                chatId = targetChat, senderId = currentUserId, senderName = currentUserName,
+                text = text.trim(), time = timeNow(), timestamp = System.currentTimeMillis(),
+                isFromMe = true, isRead = true
+            )
+            _messages.value = _messages.value + userMsg
+            viewModelScope.launch {
+                val replyText = runCatching { api?.askAi(text.trim())?.data?.message }.getOrNull()
+                    ?: "Maaf, Neon AI sedang tidak tersedia."
+                val aiMsg = ChatMessage(
+                    msgId = "ai_${System.currentTimeMillis()}",
+                    chatId = targetChat, senderId = NEON_AI_CHAT_ID, senderName = "Neon AI",
+                    text = replyText, time = timeNow(), timestamp = System.currentTimeMillis(),
+                    isFromMe = false, isRead = true
+                )
+                _messages.value = _messages.value + aiMsg
+            }
+            return
+        }
+
+        val replyId = _replyMessage.value?.msgId
         viewModelScope.launch {
             repository.sendMessage(
-                chatId = targetChat,
-                text = text,
-                currentUserId = currentUserId,
-                currentUserName = currentUserName,
+                chatId = targetChat, text = text,
+                currentUserId = currentUserId, currentUserName = currentUserName,
                 replyTo = replyId
             )
             _replyMessage.value = null
         }
+    }
+
+    private fun timeNow(): String =
+        java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date())
+
+    companion object {
+        const val NEON_AI_CHAT_ID = "neon_ai"
     }
 
     /**
