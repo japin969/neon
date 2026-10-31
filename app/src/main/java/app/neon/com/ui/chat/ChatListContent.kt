@@ -110,7 +110,7 @@ fun ChatListContent(
         val q = query.trim()
         chats
             .filter { (it.id in archivedIds) == showingArchived }
-            .filter { q.isEmpty() || it.name.contains(q, ignoreCase = true) || it.lastMessage.contains(q, ignoreCase = true) }
+            .filter { q.isEmpty() || it.chatName.contains(q, ignoreCase = true) || it.lastMessage.contains(q, ignoreCase = true) }
             .sortedByDescending { it.id in pinnedIds }
     }
     // isi selanjutnya ada di Langkah 3B

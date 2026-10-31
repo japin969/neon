@@ -51,20 +51,10 @@ import app.neon.com.ui.theme.GhAccentGreen
 import app.neon.com.ui.theme.GhButtonPrimary
 import app.neon.com.ui.theme.InterFontFamily
 import app.neon.com.ui.theme.bouncyClickable
+import app.neon.com.data.model.ChatItem
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
-
-@Immutable
-data class ChatItem(
-    val id: String,
-    val name: String,
-    val lastMessage: String,
-    val time: String,
-    val avatarUrl: String,
-    val unreadCount: Int = 0,
-    val isOnline: Boolean = false
-)
 
 @Composable
 fun ChatListScreen(
@@ -76,17 +66,18 @@ fun ChatListScreen(
     var searchQuery by remember { mutableStateOf("") }
 
     val initialChats = remember {
+        val now = System.currentTimeMillis()
         listOf(
-            ChatItem("chat_aura", "Aura Cantika", "Lagu yang barusan kamu putar di Neont enak banget! 🎶", "10:42", "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80", 2, true),
-            ChatItem("chat_komunitas", "Komunitas Musik Jakarta", "Diskusi album terbaru Taylor Swift di room musik...", "09:15", "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80", 0, false),
-            ChatItem("chat_rizky", "Rizky Ramadhan", "Bro, share playlist Neont kamu dong, buat nemenin kerja.", "Kemarin", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80", 1, true),
-            ChatItem("chat_nadia", "Nadia Salsabila", "Makasih ya rekomendasi lagunya! Pas banget di mood.", "Kemarin", "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80", 0, false)
+            ChatItem(id = "chat_aura", chatName = "Aura Cantika", lastMessage = "Lagu yang barusan kamu putar di Neont enak banget! 🎶", lastMessageTimestamp = now - 20 * 60_000L, recipientAvatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80", unreadCount = 2),
+            ChatItem(id = "chat_komunitas", isGroup = true, chatName = "Komunitas Musik Jakarta", lastMessage = "Diskusi album terbaru Taylor Swift di room musik...", lastMessageTimestamp = now - 3 * 3_600_000L, recipientAvatarUrl = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=200&q=80"),
+            ChatItem(id = "chat_rizky", chatName = "Rizky Ramadhan", lastMessage = "Bro, share playlist Neont kamu dong, buat nemenin kerja.", lastMessageTimestamp = now - 26 * 3_600_000L, recipientAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80", unreadCount = 1),
+            ChatItem(id = "chat_nadia", chatName = "Nadia Salsabila", lastMessage = "Makasih ya rekomendasi lagunya! Pas banget di mood.", lastMessageTimestamp = now - 30 * 3_600_000L, recipientAvatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80")
         )
     }
 
     val filteredChats = remember(searchQuery, initialChats) {
         if (searchQuery.isBlank()) initialChats
-        else initialChats.filter { it.name.contains(searchQuery, true) || it.lastMessage.contains(searchQuery, true) }
+        else initialChats.filter { it.chatName.contains(searchQuery, true) || it.lastMessage.contains(searchQuery, true) }
     }
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF2F2F7)).statusBarsPadding()) {

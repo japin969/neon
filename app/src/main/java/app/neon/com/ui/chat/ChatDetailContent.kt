@@ -244,7 +244,7 @@ fun ChatDetailContent(
                     }
                 }
             }
-            AnimatedVisibility(
+            androidx.compose.animation.AnimatedVisibility(
                 visible = showScrollToBottom,
                 modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp),
                 enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()
@@ -497,12 +497,12 @@ private fun ChatComposer(value: String, onValueChange: (String) -> Unit, replyTo
             }
             Spacer(modifier = Modifier.width(8.dp))
             Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
-                AnimatedVisibility(visible = hasText, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
+                androidx.compose.animation.AnimatedVisibility(visible = hasText, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
                     Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(palette.primary).clickable(onClick = onSend), contentAlignment = Alignment.Center) {
                         Icon(Icons.AutoMirrored.Filled.Send, "Kirim", tint = Color.White)
                     }
                 }
-                AnimatedVisibility(visible = !hasText, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
+                androidx.compose.animation.AnimatedVisibility(visible = !hasText, enter = scaleIn() + fadeIn(), exit = scaleOut() + fadeOut()) {
                     Box(modifier = Modifier.size(44.dp).clip(CircleShape).background(palette.primary).clickable(onClick = onMicClick), contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Mic, "Pesan suara", tint = Color.White)
                     }
