@@ -1,5 +1,11 @@
 package app.neon.com.ui.navigation
 
+import app.neon.com.ui.security.PinFlowType
+
+import app.neon.com.ui.security.PinFlowScreen
+
+import app.neon.com.ui.security.AppLockSettingsScreen
+
 import app.neon.com.ui.auth.ResetPasswordScreen
 
 import androidx.compose.runtime.getValue
@@ -121,11 +127,76 @@ import app.neon.com.ui.profile.StoryViewerViewModel
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 sealed class Screen(val route: String) {
     object Splash : Screen("splash")
     object Login : Screen("login")
     object Register : Screen("register")
     object ResetPassword : Screen("reset_password")
+    object AppLockSettings : Screen("app_lock_settings")
+    object PinFlow : Screen("pin_flow/{type}") {
+        fun createRoute(type: PinFlowType): String = "pin_flow/${type.name}"
+    }
     object CreateUsername : Screen("create_username")
 
     object Main : Screen("main?tab={tab}") {
@@ -369,6 +440,26 @@ fun NeontNavGraph(
             ResetPasswordScreen(
                 authViewModel = authViewModel,
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AppLockSettings.route) {
+            AppLockSettingsScreen(
+                onBackClick = { navController.popBackStack() },
+                onStartFlow = { flow -> navController.navigate(Screen.PinFlow.createRoute(flow)) }
+            )
+        }
+        composable(
+            route = Screen.PinFlow.route,
+            arguments = listOf(navArgument("type") { type = NavType.StringType })
+        ) { entry ->
+            val flowType = entry.arguments?.getString("type")
+                ?.let { name -> PinFlowType.entries.firstOrNull { it.name == name } }
+                ?: PinFlowType.Enable
+            PinFlowScreen(
+                flowType = flowType,
+                onFinished = { navController.popBackStack() },
+                onCancel = { navController.popBackStack() }
             )
         }
 
