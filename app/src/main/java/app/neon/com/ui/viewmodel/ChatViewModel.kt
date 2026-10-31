@@ -1,6 +1,8 @@
 package app.neon.com.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import app.neon.com.data.model.ChatMessage
 import app.neon.com.data.repository.ChatRepository
@@ -19,9 +21,10 @@ import kotlinx.coroutines.launch
  * - deleteMessage(chatId, msgId)
  * - editMessage(chatId, msgId, newText)
  */
-class ChatViewModel(
+@HiltViewModel
+class ChatViewModel @Inject constructor(
     private val repository: ChatRepository = ChatRepository(),
-    private val api: NexaDevApiService? = null
+    private val api: NexaDevApiService
 ) : ViewModel() {
 
     private val auth: FirebaseAuth? = runCatching { FirebaseAuth.getInstance() }.getOrNull()

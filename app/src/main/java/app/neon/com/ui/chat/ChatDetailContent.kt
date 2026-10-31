@@ -151,7 +151,6 @@ fun ChatDetailContent(
     onPinMessage: (ChatMessage, Boolean) -> Unit = { _, _ -> },
     onStarMessage: (ChatMessage, Boolean) -> Unit = { _, _ -> }
 ) {
-    SecureWindowEffect()
     val palette = neontChatPalette()
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
