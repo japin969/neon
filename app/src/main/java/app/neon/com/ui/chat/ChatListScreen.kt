@@ -2,6 +2,7 @@ package app.neon.com.ui.chat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,14 +27,12 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,11 +47,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.neon.com.ui.theme.GhAccentGreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import app.neon.com.data.model.ChatItem
 import app.neon.com.ui.theme.GhButtonPrimary
 import app.neon.com.ui.theme.InterFontFamily
 import app.neon.com.ui.theme.bouncyClickable
-import app.neon.com.data.model.ChatItem
+import app.neon.com.ui.viewmodel.ChatViewModel
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
@@ -83,67 +85,80 @@ fun ChatListScreen(
         else initialChats.filter { it.chatName.contains(searchQuery, true) || it.lastMessage.contains(searchQuery, true) }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF2F2F7)).statusBarsPadding()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().background(Color(0xFFF2F2F7)).padding(horizontal = 18.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Chats", fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 34.sp, color = Color(0xFF111827))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(38.dp).clip(CircleShape).background(Color(0xFFE8EDF2)).border(0.5.dp, Color(0xFFE3E8EF), CircleShape).bouncyClickable(onClick = { showAiDialog = true }),
-                    contentAlignment = Alignment.Center
-                ) { Icon(Icons.Default.Star, "Neon AI", tint = Color(0xFF1F2328), modifier = Modifier.size(20.dp)) }
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier.size(38.dp).clip(CircleShape).background(Color(0xFFE8EDF2)).border(0.5.dp, Color(0xFFE3E8EF), CircleShape).bouncyClickable(onClick = onNavigateToMusic),
-                    contentAlignment = Alignment.Center
-                ) { Icon(Icons.Default.MusicNote, "Music", tint = Color(0xFF1F2328), modifier = Modifier.size(20.dp)) }
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier.size(38.dp).clip(CircleShape).background(Color(0xFFE8EDF2)).border(0.5.dp, Color(0xFFE3E8EF), CircleShape).bouncyClickable(onClick = onLogoutClick),
-                    contentAlignment = Alignment.Center
-                ) { Icon(Icons.AutoMirrored.Filled.Logout, "Logout", tint = Color(0xFF1F2328), modifier = Modifier.size(18.dp)) }
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF2F2F7)).statusBarsPadding()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Top Bar
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Chats", fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 34.sp, color = Color(0xFF111827))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.size(38.dp).clip(CircleShape).background(Color(0xFFE8EDF2)).border(0.5.dp, Color(0xFFE3E8EF), CircleShape).bouncyClickable(onClick = onNavigateToMusic),
+                        contentAlignment = Alignment.Center
+                    ) { Icon(Icons.Default.MusicNote, "Music", tint = Color(0xFF1F2328), modifier = Modifier.size(20.dp)) }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier.size(38.dp).clip(CircleShape).background(Color(0xFFE8EDF2)).border(0.5.dp, Color(0xFFE3E8EF), CircleShape).bouncyClickable(onClick = onLogoutClick),
+                        contentAlignment = Alignment.Center
+                    ) { Icon(Icons.AutoMirrored.Filled.Logout, "Logout", tint = Color(0xFF1F2328), modifier = Modifier.size(18.dp)) }
+                }
             }
-        }
 
-        Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
-            TextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(12.dp)).border(0.5.dp, Color(0xFFE4E7EC), RoundedCornerShape(12.dp)),
-                placeholder = { Text("Cari percakapan...", fontFamily = InterFontFamily, fontSize = 15.sp, color = Color(0xFF98A2B3)) },
-                leadingIcon = { Icon(Icons.Default.Search, "Search", tint = Color(0xFF98A2B3), modifier = Modifier.size(18.dp)) },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Clear, "Clear", tint = Color(0xFF98A2B3), modifier = Modifier.size(16.dp)) }
-                },
-                singleLine = true,
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, disabledContainerColor = Color.White,
-                    focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = Color(0xFF111827), unfocusedTextColor = Color(0xFF111827)
+            // Search Bar (BasicTextField agar tidak auto-focus keyboard)
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+                androidx.compose.foundation.text.BasicTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 15.sp, color = Color(0xFF111827), fontFamily = InterFontFamily),
+                    modifier = Modifier.fillMaxWidth().height(46.dp).clip(RoundedCornerShape(12.dp)).background(Color.White).padding(horizontal = 12.dp),
+                    decorationBox = { innerTextField ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Search, "Search", tint = Color(0xFF98A2B3), modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(modifier = Modifier.weight(1f)) {
+                                if (searchQuery.isEmpty()) Text("Cari percakapan...", fontSize = 15.sp, color = Color(0xFF98A2B3), fontFamily = InterFontFamily)
+                                innerTextField()
+                            }
+                            if (searchQuery.isNotEmpty()) {
+                                Icon(Icons.Default.Clear, "Clear", tint = Color(0xFF98A2B3), modifier = Modifier.size(18.dp).clickable { searchQuery = "" })
+                            }
+                        }
+                    }
                 )
-            )
-        }
+            }
 
-        LazyColumn(state = listState, modifier = Modifier.fillMaxWidth().weight(1f), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
-            items(filteredChats, key = { it.id }) { chat ->
-                ChatConversationItem(chat = chat, onClick = { onChatClick(chat.id) })
-                Spacer(modifier = Modifier.height(10.dp))
+            // List Chat
+            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 88.dp)) {
+                    items(filteredChats, key = { it.id }) { chat ->
+                        ChatConversationItem(chat = chat, onClick = { onChatClick(chat.id) })
+                    }
+                }
+                // FAB Neon AI di bawah
+                FloatingActionButton(
+                    onClick = { showAiDialog = true },
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).size(56.dp),
+                    shape = CircleShape,
+                    containerColor = Color(0xFF25D366),
+                    contentColor = Color.White
+                ) { Icon(Icons.Default.Star, contentDescription = "Neon AI") }
             }
         }
     }
 
     if (showAiDialog) {
-        androidx.compose.ui.window.Dialog(
+        Dialog(
             onDismissRequest = { showAiDialog = false },
-            properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+            properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
-            val aiViewModel: app.neon.com.ui.viewmodel.ChatViewModel = androidx.hilt.navigation.compose.hiltViewModel()
-            app.neon.com.ui.chat.ChatDetailScreen(
+            val aiViewModel: ChatViewModel = hiltViewModel()
+            ChatDetailScreen(
                 chatViewModel = aiViewModel,
-                chatId = app.neon.com.ui.viewmodel.ChatViewModel.NEON_AI_CHAT_ID,
+                chatId = ChatViewModel.NEON_AI_CHAT_ID,
                 chatPartnerName = "Neon AI",
                 chatPartnerAvatar = "",
                 onBackClick = { showAiDialog = false }
@@ -155,22 +170,17 @@ fun ChatListScreen(
 @Composable
 private fun ChatConversationItem(chat: ChatItem, onClick: () -> Unit) {
     val context = LocalContext.current
-    Surface(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).border(0.5.dp, Color(0xFFE4E7EC), RoundedCornerShape(12.dp)).bouncyClickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp), color = Color.White, tonalElevation = 0.dp
-    ) {
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth().background(Color.White).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box {
                 AsyncImage(
                     model = ImageRequest.Builder(context).data(chat.recipientAvatarUrl).crossfade(true).memoryCachePolicy(CachePolicy.ENABLED).build(),
                     contentDescription = chat.chatName, contentScale = ContentScale.Crop,
                     modifier = Modifier.size(52.dp).clip(CircleShape).background(Color(0xFFE8EDF2))
                 )
-                if (false) {
-                    Box(modifier = Modifier.size(11.dp).clip(CircleShape).background(Color.White).padding(1.5.dp).align(Alignment.BottomEnd)) {
-                        Box(modifier = Modifier.fillMaxSize().clip(CircleShape).background(GhAccentGreen))
-                    }
-                }
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -190,9 +200,13 @@ private fun ChatConversationItem(chat: ChatItem, onClick: () -> Unit) {
                 }
             }
         }
+        HorizontalDivider(
+            modifier = Modifier.padding(start = 80.dp),
+            color = Color(0xFFE5E5EA),
+            thickness = 0.5.dp
+        )
     }
 }
-
 
 private fun formatTime(timestamp: Long): String {
     if (timestamp <= 0L) return ""
