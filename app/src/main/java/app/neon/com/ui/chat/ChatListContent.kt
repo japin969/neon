@@ -205,7 +205,7 @@ fun ChatListContent(
             onDismissRequest = { pendingDelete = null },
             containerColor = palette.surface,
             title = { Text("Hapus percakapan?") },
-            text = { Text("Percakapan dengan ${chat.name} akan dihapus dari daftar Anda.") },
+            text = { Text("Percakapan dengan ${chat.chatName} akan dihapus dari daftar Anda.") },
             confirmButton = {
                 TextButton(onClick = { onDelete(chat); pendingDelete = null }) {
                     Text("Hapus", color = palette.destructive)
@@ -368,16 +368,16 @@ private fun ChatListRow(
                         .padding(horizontal = 16.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    NeontAvatar(name = chat.name, size = 52.dp, isOnline = chat.isOnline, ringColor = palette.listBackground)
+                    NeontAvatar(name = chat.chatName, size = 52.dp, isOnline = false, ringColor = palette.listBackground)
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = chat.name, color = palette.textPrimary, style = MaterialTheme.typography.titleMedium,
+                                text = chat.chatName, color = palette.textPrimary, style = MaterialTheme.typography.titleMedium,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = chat.time, color = if (hasUnread) palette.primary else palette.timestamp, style = MaterialTheme.typography.bodySmall)
+                            Text(text = formatTime(chat.lastMessageTimestamp), color = if (hasUnread) palette.primary else palette.timestamp, style = MaterialTheme.typography.bodySmall)
                         }
                         Spacer(modifier = Modifier.height(2.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -427,5 +427,19 @@ private fun UnreadBadge(count: Int, palette: NeontChatPalette) {
             color = Color.White,
             style = MaterialTheme.typography.labelMedium
         )
+    }
+}
+
+
+private fun formatTime(timestamp: Long): String {
+    if (timestamp <= 0L) return ""
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    return when {
+        diff < 60_000L -> "baru saja"
+        diff < 3_600_000L -> "${diff / 60_000L} menit"
+        diff < 86_400_000L -> "${diff / 3_600_000L} jam"
+        else -> java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+            .format(java.util.Date(timestamp))
     }
 }

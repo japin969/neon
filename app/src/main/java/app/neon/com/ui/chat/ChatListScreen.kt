@@ -147,11 +147,11 @@ private fun ChatConversationItem(chat: ChatItem, onClick: () -> Unit) {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Box {
                 AsyncImage(
-                    model = ImageRequest.Builder(context).data(chat.avatarUrl).crossfade(true).memoryCachePolicy(CachePolicy.ENABLED).build(),
-                    contentDescription = chat.name, contentScale = ContentScale.Crop,
+                    model = ImageRequest.Builder(context).data(chat.recipientAvatarUrl).crossfade(true).memoryCachePolicy(CachePolicy.ENABLED).build(),
+                    contentDescription = chat.chatName, contentScale = ContentScale.Crop,
                     modifier = Modifier.size(52.dp).clip(CircleShape).background(Color(0xFFE8EDF2))
                 )
-                if (chat.isOnline) {
+                if (false) {
                     Box(modifier = Modifier.size(11.dp).clip(CircleShape).background(Color.White).padding(1.5.dp).align(Alignment.BottomEnd)) {
                         Box(modifier = Modifier.fillMaxSize().clip(CircleShape).background(GhAccentGreen))
                     }
@@ -160,8 +160,8 @@ private fun ChatConversationItem(chat: ChatItem, onClick: () -> Unit) {
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                    Text(chat.name, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFF1F2328), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(chat.time, fontFamily = InterFontFamily, fontSize = 12.sp, color = if (chat.unreadCount > 0) GhButtonPrimary else Color(0xFF8A8F98))
+                    Text(chat.chatName, fontFamily = InterFontFamily, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFF1F2328), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(formatTime(chat.lastMessageTimestamp), fontFamily = InterFontFamily, fontSize = 12.sp, color = if (chat.unreadCount > 0) GhButtonPrimary else Color(0xFF8A8F98))
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -175,5 +175,19 @@ private fun ChatConversationItem(chat: ChatItem, onClick: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+
+private fun formatTime(timestamp: Long): String {
+    if (timestamp <= 0L) return ""
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    return when {
+        diff < 60_000L -> "baru saja"
+        diff < 3_600_000L -> "${diff / 60_000L} menit"
+        diff < 86_400_000L -> "${diff / 3_600_000L} jam"
+        else -> java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+            .format(java.util.Date(timestamp))
     }
 }

@@ -600,9 +600,9 @@ private fun ForwardDialog(targets: List<ChatItem>, palette: NeontChatPalette, on
             else Column(modifier = Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
                 targets.forEach { chat ->
                     Row(modifier = Modifier.fillMaxWidth().clickable { onSelect(chat) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        NeontAvatar(name = chat.name, size = 36.dp, ringColor = palette.surface)
+                        NeontAvatar(name = chat.chatName, size = 36.dp, ringColor = palette.surface)
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(chat.name, color = palette.textPrimary, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(chat.chatName, color = palette.textPrimary, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
