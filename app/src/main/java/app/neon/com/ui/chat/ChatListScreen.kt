@@ -498,6 +498,7 @@ private fun SwipeableChatItem(
 /**
  * Tampilan baris item obrolan tanpa card, latar surface penuh dengan divider inset 80dp
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ChatItemView(
     chat: ChatItem,
