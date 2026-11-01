@@ -30,7 +30,7 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.EditSquare
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.PushPin
@@ -86,6 +86,7 @@ private enum class ChatFilterType(val label: String) {
     GROUPS("Grup")
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ChatListScreen(
     onChatClick: (chatId: String) -> Unit = {},
@@ -208,7 +209,7 @@ fun ChatListScreen(
                             .clickable(onClick = onNavigateToMusic)
                     )
                     Icon(
-                        imageVector = Icons.Default.EditSquare,
+                        imageVector = Icons.Default.Edit,
                         contentDescription = "Chat Baru",
                         tint = IosBlue,
                         modifier = Modifier

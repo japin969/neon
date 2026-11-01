@@ -58,7 +58,7 @@ val QuickReactionEmojis = listOf("❤️", "👍", "🔥", "😂", "😢", "🙏
  * Dialog Menu Konteks Pesan dengan 12 Aksi lengkap sesuai standar iOS & WhatsApp.
  */
 @Composable
-fun MessageContextMenu(
+internal fun MessageContextMenu(
     message: ChatMessage,
     currentUserId: String,
     isPinned: Boolean,
