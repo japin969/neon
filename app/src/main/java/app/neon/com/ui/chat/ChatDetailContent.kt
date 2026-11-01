@@ -329,7 +329,7 @@ fun ChatDetailContent(
             }
 
             // Tombol Melayang Scroll ke Pesan Terbaru
-            AnimatedVisibility(
+            androidx.compose.animation.AnimatedVisibility(
                 visible = showScrollToBottom,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -1003,7 +1003,7 @@ private fun ChatComposer(
                 modifier = Modifier.size(40.dp),
                 contentAlignment = Alignment.Center
             ) {
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = hasText,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut()
@@ -1025,7 +1025,7 @@ private fun ChatComposer(
                     }
                 }
 
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = !hasText,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut()
