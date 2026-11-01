@@ -8,7 +8,7 @@ import app.neon.com.ui.viewmodel.ChatViewModel
 
 /**
  * Wrapper stateful untuk ChatDetailContent (stateless).
- * Signature sama dengan versi lama -> aman untuk NavGraph.
+ * Signature tetap sama persis dengan yang dipanggil NavGraph / MainScreen.
  */
 @Composable
 fun ChatDetailScreen(
@@ -36,8 +36,14 @@ fun ChatDetailScreen(
             chatViewModel.setReplyMessage(replyMessage)
             chatViewModel.sendMessage(chatId, text)
         },
-        onReaction = { message, emoji -> chatViewModel.sendReaction(chatId, message.msgId, emoji) },
-        onEditMessage = { message, newText -> chatViewModel.editMessage(chatId, message.msgId, newText) },
-        onDeleteMessage = { message, forEveryone -> chatViewModel.deleteMessage(chatId, message.msgId, forEveryone) }
+        onReaction = { message, emoji ->
+            chatViewModel.sendReaction(chatId, message.msgId, emoji)
+        },
+        onEditMessage = { message, newText ->
+            chatViewModel.editMessage(chatId, message.msgId, newText)
+        },
+        onDeleteMessage = { message, forEveryone ->
+            chatViewModel.deleteMessage(chatId, message.msgId, forEveryone)
+        }
     )
 }
