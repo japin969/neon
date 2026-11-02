@@ -560,27 +560,6 @@ fun ChatDetailContent(
         )
     }
 
-    // Dialog Info Pesan
-    val infoTarget = showInfoTargetId?.let { byId[it] }
-    if (infoTarget != null) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showInfoTargetId = null },
-            containerColor = if (isDark) Color(0xFF1C1C1E) else Color.White,
-            title = { Text("Info Pesan", color = palette.textPrimary) },
-            text = {
-                Column {
-                    Text("Dikirim: ${infoTarget.time}", color = palette.textSecondary)
-                    Text("Pengirim: ${if (infoTarget.isFromMe) "Anda" else infoTarget.senderName}", color = palette.textSecondary)
-                    Text("ID: ${infoTarget.msgId}", color = palette.textSecondary)
-                    Text("Status: ${if (infoTarget.isRead) "Dibaca" else "Terkirim"}", color = palette.textSecondary)
-                }
-            },
-            confirmButton = {
-                androidx.compose.material3.TextButton(onClick = { showInfoTargetId = null }) { Text("Tutup") }
-            }
-        )
-    }
-
     val deleteTarget = deleteTargetId?.let { byId[it] }
     if (deleteTarget != null) {
         DeleteMessageDialog(
