@@ -91,6 +91,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -374,7 +375,7 @@ fun ChatDetailContent(
                 }
 
                 // G. Tombol Melayang Scroll ke Bawah (Glass circle 40dp, shadow 4dp, KeyboardArrowDown)
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = showScrollToBottom,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
@@ -693,12 +694,10 @@ private fun DayPill(label: String, hazeState: HazeState, isDark: Boolean) {
             .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
+        // ANTI-LAG: solid glass untuk DayPill (haze per-item terlalu berat)
         Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(10.dp))
-                .hazeEffect(state = hazeState) {
-                    blurRadius = 10.dp
-                }
                 .background(
                     if (isDark) Color.Black.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.70f)
                 )
@@ -925,12 +924,10 @@ private fun MessageBubbleRow(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         reactionCounts.forEach { (emoji, count) ->
+                            // ANTI-LAG: solid glass per-bubble (haze per-item terlalu berat untuk LazyColumn)
                             Row(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
-                                    .hazeEffect(state = hazeState) {
-                                        blurRadius = 10.dp
-                                    }
                                     .background(
                                         if (isDark) Color.Black.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.70f)
                                     )
@@ -1146,7 +1143,7 @@ private fun ChatComposer(
                 modifier = Modifier.size(44.dp),
                 contentAlignment = Alignment.Center
             ) {
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = hasText,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut()
@@ -1170,7 +1167,7 @@ private fun ChatComposer(
                     }
                 }
 
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = !hasText,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut()

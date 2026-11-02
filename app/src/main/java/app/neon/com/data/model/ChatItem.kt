@@ -1,7 +1,9 @@
 package app.neon.com.data.model
 
+import androidx.compose.runtime.Immutable
 import com.google.firebase.database.IgnoreExtraProperties
 
+@Immutable
 @IgnoreExtraProperties
 data class ChatItem(
     val id: String = "",
