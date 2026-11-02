@@ -55,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -161,7 +162,7 @@ internal fun MessageContextMenu(
                                         .size(42.dp)
                                         .clip(CircleShape)
                                         .background(
-                                            if (isSelected) glassGreenGradientBrush() else Color.Transparent
+                                            if (isSelected) glassGreenGradientBrush() else androidx.compose.ui.graphics.SolidColor(Color.Transparent)
                                         )
                                         .clickable { onReaction(emoji) },
                                     contentAlignment = Alignment.Center
