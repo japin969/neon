@@ -1,9 +1,12 @@
 package app.neon.com.ui.chat
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,7 +41,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +57,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
@@ -74,6 +78,9 @@ import app.neon.com.ui.viewmodel.ChatViewModel
 import coil.compose.AsyncImage
 import coil.request.CachePolicy
 import coil.request.ImageRequest
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -95,6 +102,8 @@ fun ChatListScreen(
     onNavigateToNeonAi: () -> Unit = {}
 ) {
     val palette = neontChatPalette()
+    val isDark = isSystemInDarkTheme()
+    val hazeState = remember { HazeState() }
     val listState = rememberLazyListState()
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf(ChatFilterType.ALL) }
@@ -162,139 +171,177 @@ fun ChatListScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(palette.surface)
-            .statusBarsPadding()
+            .background(chatWallpaperBrush(isDark))
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Top Bar Gaya WhatsApp iOS
-            Row(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+        ) {
+            // ==========================================
+            // 1. TOP BAR (LIQUID GLASS)
+            // ==========================================
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 15.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.72f)
+                    )
+                    .border(
+                        width = 0.5.dp,
+                        color = Color.White.copy(alpha = 0.25f),
+                        shape = RoundedCornerShape(0.dp)
+                    )
             ) {
-                // Teks "Edit" kiri warna biru iOS #007AFF
-                Text(
-                    text = "Edit",
-                    fontFamily = InterFontFamily,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 17.sp,
-                    color = IosBlue,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .clickable { /* Mode edit bulk */ }
-                        .padding(horizontal = 4.dp, vertical = 2.dp)
-                )
-
-                // Ikon kanan: Security, Music, Chat Baru, Logout
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Security,
-                        contentDescription = "Keamanan",
-                        tint = IosBlue,
+                    // Teks "Edit" kiri warna biru iOS #007AFF
+                    Text(
+                        text = "Edit",
+                        fontFamily = InterFontFamily,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 17.sp,
+                        color = IosBlue,
                         modifier = Modifier
-                            .size(22.dp)
-                            .clickable { /* Info keamanan */ }
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { /* Mode edit bulk */ }
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
                     )
-                    Icon(
-                        imageVector = Icons.Default.MusicNote,
-                        contentDescription = "Musik",
-                        tint = IosBlue,
-                        modifier = Modifier
-                            .size(22.dp)
-                            .clickable(onClick = onNavigateToMusic)
-                    )
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Chat Baru",
-                        tint = IosBlue,
-                        modifier = Modifier
-                            .size(22.dp)
-                            .clickable { /* Kontak baru */ }
-                    )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Logout,
-                        contentDescription = "Logout",
-                        tint = palette.textSecondary,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clickable(onClick = onLogoutClick)
-                    )
+
+                    // Ikon kanan: Security (24dp), Music (24dp), NewChat (24dp), Logout (22dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Security,
+                            contentDescription = "Keamanan",
+                            tint = IosBlue,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable { /* Info keamanan */ }
+                        )
+                        Icon(
+                            imageVector = Icons.Default.MusicNote,
+                            contentDescription = "Musik",
+                            tint = IosBlue,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable(onClick = onNavigateToMusic)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Chat Baru",
+                            tint = IosBlue,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable { /* Kontak baru */ }
+                        )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = "Logout",
+                            tint = palette.textSecondary,
+                            modifier = Modifier
+                                .size(22.dp)
+                                .clickable(onClick = onLogoutClick)
+                        )
+                    }
                 }
             }
 
-            // Large Title "Neon" 34sp Bold
+            // 2. Large Title "Chats" 34sp Bold
             Text(
-                text = "Neon",
+                text = "Chats",
                 fontFamily = InterFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 34.sp,
                 color = palette.textPrimary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
-            // Search Bar Abu #E5E5EA rounded 10dp tanpa auto-focus keyboard
+            // 3. Search Bar Liquid Glass (Height 40dp, rounded 12dp, hazeEffect blur 10dp, border 0.5dp White alpha 0.35)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
             ) {
-                BasicTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    singleLine = true,
-                    textStyle = TextStyle(
-                        fontSize = 16.sp,
-                        color = palette.textPrimary,
-                        fontFamily = InterFontFamily
-                    ),
-                    cursorBrush = SolidColor(IosBlue),
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(38.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(palette.searchBar)
+                        .height(40.dp)
+                        .shadow(
+                            elevation = 4.dp,
+                            shape = RoundedCornerShape(12.dp),
+                            ambientColor = Color.Black.copy(alpha = 0.08f),
+                            spotColor = Color.Black.copy(alpha = 0.12f)
+                        )
+                        .clip(RoundedCornerShape(12.dp))
+                        .hazeEffect(state = hazeState) {
+                            blurRadius = 10.dp
+                        }
+                        .background(
+                            if (isDark) Color.Black.copy(alpha = 0.50f) else Color.White.copy(alpha = 0.65f)
+                        )
+                        .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
                         .padding(horizontal = 10.dp),
-                    decorationBox = { innerTextField ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Cari",
-                                tint = palette.textSecondary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Box(modifier = Modifier.weight(1f)) {
-                                if (searchQuery.isEmpty()) {
-                                    Text(
-                                        text = "Cari",
-                                        fontSize = 16.sp,
-                                        color = palette.textSecondary,
-                                        fontFamily = InterFontFamily
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    BasicTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            fontSize = 17.sp,
+                            color = palette.textPrimary,
+                            fontFamily = InterFontFamily
+                        ),
+                        cursorBrush = SolidColor(IosBlue),
+                        modifier = Modifier.fillMaxWidth(),
+                        decorationBox = { innerTextField ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search",
+                                    tint = palette.textSecondary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Box(modifier = Modifier.weight(1f)) {
+                                    if (searchQuery.isEmpty()) {
+                                        Text(
+                                            text = "Search",
+                                            fontSize = 17.sp,
+                                            color = palette.textSecondary,
+                                            fontFamily = InterFontFamily
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                                if (searchQuery.isNotEmpty()) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "Hapus",
+                                        tint = palette.textSecondary,
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .clickable { searchQuery = "" }
                                     )
                                 }
-                                innerTextField()
-                            }
-                            if (searchQuery.isNotEmpty()) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = "Hapus",
-                                    tint = palette.textSecondary,
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .clickable { searchQuery = "" }
-                                )
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
 
-            // Filter Chip Row: Semua / Belum dibaca / Favorit / Grup
+            // 4. Filter Chips Liquid Glass (LazyRow, Glass Rounded 16dp)
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
@@ -302,12 +349,25 @@ fun ChatListScreen(
             ) {
                 items(ChatFilterType.values()) { filter ->
                     val isSelected = selectedFilter == filter
-                    val bg = if (isSelected) Color(0xFFDCF8C6) else palette.searchBar
-                    val txtColor = if (isSelected) Color(0xFF075E54) else palette.textSecondary
-                    Box(
-                        modifier = Modifier
+                    val chipModifier = if (isSelected) {
+                        Modifier
                             .clip(RoundedCornerShape(16.dp))
-                            .background(bg)
+                            .background(glassGreenGradientBrush())
+                            .border(0.5.dp, Color.White.copy(alpha = 0.40f), RoundedCornerShape(16.dp))
+                    } else {
+                        Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .hazeEffect(state = hazeState) {
+                                blurRadius = 10.dp
+                            }
+                            .background(
+                                if (isDark) Color.Black.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.55f)
+                            )
+                            .border(0.5.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(16.dp))
+                    }
+
+                    Box(
+                        modifier = chipModifier
                             .clickable { selectedFilter = filter }
                             .padding(horizontal = 12.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center
@@ -317,13 +377,13 @@ fun ChatListScreen(
                             fontFamily = InterFontFamily,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                             fontSize = 13.sp,
-                            color = txtColor
+                            color = if (isSelected) Color.White else palette.textPrimary
                         )
                     }
                 }
             }
 
-            // List Chat (Swipe kanan = Pin, Swipe kiri = Hapus)
+            // 5. Chat List (LazyColumn, hazeSource agar blur mengambil wallpaper + item)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -331,13 +391,16 @@ fun ChatListScreen(
             ) {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 88.dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .hazeSource(state = hazeState),
+                    contentPadding = PaddingValues(bottom = 96.dp)
                 ) {
                     items(filteredChats, key = { it.id }) { chat ->
                         SwipeableChatItem(
                             chat = chat,
                             palette = palette,
+                            isDark = isDark,
                             onClick = { onChatClick(chat.id) },
                             onLongClick = { selectedContextChat = chat },
                             onTogglePin = {
@@ -353,20 +416,23 @@ fun ChatListScreen(
                     }
                 }
 
-                // FAB Bintang Hijau (#25D366) Kanan Bawah -> Buka Neon AI Dialog
-                FloatingActionButton(
-                    onClick = { showAiDialog = true },
+                // 7. FAB Neon AI (60dp CircleShape, Brush.linearGradient(#25D366, #128C7E), border 0.5dp White alpha 0.4, shadow 12dp)
+                Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(16.dp)
-                        .size(56.dp),
-                    shape = CircleShape,
-                    containerColor = Color(0xFF25D366),
-                    contentColor = Color.White
+                        .size(60.dp)
+                        .shadow(12.dp, CircleShape, ambientColor = Color(0xFF25D366).copy(alpha = 0.35f))
+                        .clip(CircleShape)
+                        .background(glassGreenGradientBrush())
+                        .border(0.5.dp, Color.White.copy(alpha = 0.40f), CircleShape)
+                        .clickable { showAiDialog = true },
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Star,
                         contentDescription = "Neon AI",
+                        tint = Color.White,
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -374,12 +440,14 @@ fun ChatListScreen(
         }
     }
 
-    // Context Menu Dialog (Long-press)
+    // Context Menu Dialog (Long-press) Liquid Glass
     val ctxChat = selectedContextChat
     if (ctxChat != null) {
         ChatListContextMenu(
             chat = ctxChat,
             palette = palette,
+            hazeState = hazeState,
+            isDark = isDark,
             onDismiss = { selectedContextChat = null },
             onMarkRead = {
                 val idx = chatsList.indexOfFirst { it.id == ctxChat.id }
@@ -428,13 +496,14 @@ fun ChatListScreen(
 }
 
 /**
- * Item Chat dengan SwipeToDismissBox Material3
+ * Item Chat dengan SwipeToDismissBox Material3 + Glass Pin & Delete Background
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SwipeableChatItem(
     chat: ChatItem,
     palette: NeontChatPalette,
+    isDark: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     onTogglePin: () -> Unit,
@@ -464,10 +533,11 @@ private fun SwipeableChatItem(
             val direction = dismissState.dismissDirection
             val color by animateColorAsState(
                 targetValue = when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.StartToEnd -> IosBlue
-                    SwipeToDismissBoxValue.EndToStart -> Color(0xFFFF3B30)
+                    SwipeToDismissBoxValue.StartToEnd -> Color(0xFF0A84FF).copy(alpha = 0.85f)
+                    SwipeToDismissBoxValue.EndToStart -> Color(0xFFFF3B30).copy(alpha = 0.85f)
                     SwipeToDismissBoxValue.Settled -> Color.Transparent
                 },
+                animationSpec = tween(180),
                 label = "swipe_bg_color"
             )
 
@@ -489,6 +559,7 @@ private fun SwipeableChatItem(
         ChatItemView(
             chat = chat,
             palette = palette,
+            isDark = isDark,
             onClick = onClick,
             onLongClick = onLongClick
         )
@@ -496,13 +567,14 @@ private fun SwipeableChatItem(
 }
 
 /**
- * Tampilan baris item obrolan tanpa card, latar surface penuh dengan divider inset 80dp
+ * Tampilan baris item obrolan: transparan dengan highlight pembatas inset 80dp
  */
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ChatItemView(
     chat: ChatItem,
     palette: NeontChatPalette,
+    isDark: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -510,16 +582,15 @@ private fun ChatItemView(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(palette.surface)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar bulat 52dp
+            // Avatar bulat 52dp dengan border 1dp White alpha 0.3
             if (chat.recipientAvatarUrl.isNotBlank()) {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
@@ -532,6 +603,7 @@ private fun ChatItemView(
                     modifier = Modifier
                         .size(52.dp)
                         .clip(CircleShape)
+                        .border(1.dp, Color.White.copy(alpha = 0.35f), CircleShape)
                         .background(palette.searchBar)
                 )
             } else {
@@ -599,11 +671,14 @@ private fun ChatItemView(
                     )
                     if (chat.unreadCount > 0) {
                         Spacer(modifier = Modifier.width(8.dp))
+                        // Unread Badge: glass pill rounded 10dp, Brush.linearGradient(#25D366, #128C7E), text putih 11sp Bold
                         Box(
                             modifier = Modifier
-                                .size(20.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF25D366)),
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(glassGreenGradientBrush())
+                                .border(0.5.dp, Color.White.copy(alpha = 0.40f), RoundedCornerShape(10.dp))
+                                .padding(horizontal = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -619,22 +694,24 @@ private fun ChatItemView(
             }
         }
 
-        // Horizontal Divider Inset 80dp
+        // Horizontal Divider: 0.5dp White alpha 0.2 (light) / 0.08 (dark), padding start 80dp
         HorizontalDivider(
             modifier = Modifier.padding(start = 80.dp),
-            color = palette.divider,
+            color = if (isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.20f),
             thickness = 0.5.dp
         )
     }
 }
 
 /**
- * Context menu saat long-press obrolan (Tandai dibaca, Pin, Bisukan, Arsip, Hapus)
+ * Context menu saat long-press obrolan (Liquid Glass Surface)
  */
 @Composable
 private fun ChatListContextMenu(
     chat: ChatItem,
     palette: NeontChatPalette,
+    hazeState: HazeState,
+    isDark: Boolean,
     onDismiss: () -> Unit,
     onMarkRead: () -> Unit,
     onTogglePin: () -> Unit,
@@ -645,25 +722,34 @@ private fun ChatListContextMenu(
     Dialog(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
-                .width(260.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(palette.surface)
+                .width(280.dp)
+                .shadow(20.dp, RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(24.dp))
+                .hazeEffect(state = hazeState) {
+                    blurRadius = 25.dp
+                }
+                .background(
+                    if (isDark) Color.Black.copy(alpha = 0.75f) else Color.White.copy(alpha = 0.85f)
+                )
+                .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(24.dp))
+                .padding(vertical = 4.dp)
         ) {
             Text(
                 text = chat.chatName,
                 style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
                 color = palette.textPrimary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
+            HorizontalDivider(color = Color.White.copy(alpha = 0.20f), thickness = 0.5.dp)
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onMarkRead)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.DoneAll, null, tint = palette.textPrimary, modifier = Modifier.size(20.dp))
@@ -674,13 +760,13 @@ private fun ChatListContextMenu(
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
+            HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onTogglePin)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.PushPin, null, tint = palette.textPrimary, modifier = Modifier.size(20.dp))
@@ -691,39 +777,39 @@ private fun ChatListContextMenu(
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
+            HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onMute)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.NotificationsOff, null, tint = palette.textPrimary, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Bisukan", color = palette.textPrimary, style = MaterialTheme.typography.bodyLarge)
             }
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
+            HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onArchive)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.Archive, null, tint = palette.textPrimary, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Arsipkan", color = palette.textPrimary, style = MaterialTheme.typography.bodyLarge)
             }
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
+            HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onDelete)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 18.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.Delete, null, tint = palette.destructive, modifier = Modifier.size(20.dp))

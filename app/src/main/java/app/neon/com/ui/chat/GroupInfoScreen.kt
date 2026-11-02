@@ -3,7 +3,9 @@ package app.neon.com.ui.chat
 import android.app.Activity
 import android.view.WindowManager
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -47,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -56,8 +60,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.neon.com.data.model.User
+import app.neon.com.ui.theme.InterFontFamily
 import app.neon.com.ui.theme.IosBlue
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
 
+/**
+ * GroupInfoScreen (WhatsApp iOS 26 Liquid Glass)
+ * - FLAG_SECURE: Wajib di Activity Lifecycle
+ * - Glass TopBar, Header, Action Row, Member List Glass Card, Action Settings, Destructive
+ */
 @Composable
 fun GroupInfoScreen(
     groupId: String,
@@ -74,9 +86,11 @@ fun GroupInfoScreen(
     onPromoteClick: (User) -> Unit = {}
 ) {
     val palette = neontChatPalette()
+    val isDark = isSystemInDarkTheme()
     val context = LocalContext.current
+    val hazeState = remember { HazeState() }
 
-    // Blokir tangkapan layar (FLAG_SECURE)
+    // FLAG_SECURE: Wajib
     DisposableEffect(Unit) {
         val activity = context as? Activity
         activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -92,284 +106,380 @@ fun GroupInfoScreen(
     val admins = remember(members, adminIds) { members.filter { it.uid in adminIds } }
     val promotable = remember(members, adminIds) { members.filter { it.uid !in adminIds } }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.listBackground)
-            .verticalScroll(rememberScrollState())
+            .background(chatWallpaperBrush(isDark))
     ) {
-        // Top Nav Back
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 4.dp)
-        ) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Kembali",
-                    tint = IosBlue
-                )
-            }
-        }
-
-        // Header: Avatar grup 96dp tengah, nama grup, "X anggota"
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
-            NeontAvatar(name = groupName, size = 96.dp, ringColor = palette.listBackground)
-            Spacer(modifier = Modifier.height(14.dp))
-            Text(
-                text = groupName,
-                color = palette.textPrimary,
-                style = MaterialTheme.typography.displayMedium.copy(fontSize = 28.sp),
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Grup · ${members.size} anggota",
-                color = palette.textSecondary,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Action Row: Pesan, Telepon, Video
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            GroupActionTile(Icons.AutoMirrored.Filled.Send, "Pesan", Modifier.weight(1f)) { onBackClick() }
-            GroupActionTile(Icons.Default.Call, "Panggilan Suara", Modifier.weight(1f)) { /* Panggilan grup */ }
-            GroupActionTile(Icons.Default.Videocam, "Panggilan Video", Modifier.weight(1f)) { /* Video grup */ }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Daftar Anggota Horisontal & Tambah Anggota
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(palette.surface)
-        ) {
-            Text(
-                text = "Anggota (${members.size})",
-                color = palette.textSecondary,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 8.dp)
-            )
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            // 1. TopNav Back (Glass)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 15.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.72f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(0.dp))
+                    .statusBarsPadding()
             ) {
-                itemsIndexed(
-                    items = members,
-                    key = { index, user -> user.uid.ifBlank { "member_$index" } }
-                ) { _, user ->
-                    val name = user.displayName.ifBlank { user.username }
-                    Column(
-                        modifier = Modifier.width(62.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        NeontAvatar(
-                            name = name,
-                            size = 48.dp,
-                            colorHex = user.avatarColorHex,
-                            ringColor = palette.surface
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = name,
-                            color = palette.textPrimary,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 12.sp,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Kembali",
+                            tint = IosBlue,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
+                    Text(
+                        text = "Info Grup",
+                        fontFamily = InterFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 17.sp,
+                        color = palette.textPrimary,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
+            Spacer(modifier = Modifier.height(16.dp))
 
+            // 2. Header (Glass Card): Avatar grup 96dp tengah, nama grup, "X Anggota"
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .shadow(10.dp, RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(24.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(24.dp))
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .shadow(12.dp, CircleShape)
+                        .border(2.dp, Color.White.copy(alpha = 0.40f), CircleShape)
+                ) {
+                    NeontAvatar(name = groupName, size = 96.dp, ringColor = palette.surface)
+                }
+                Spacer(modifier = Modifier.height(14.dp))
+                Text(
+                    text = groupName,
+                    color = palette.textPrimary,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = InterFontFamily,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Grup · ${members.size} anggota",
+                    color = Color(0xFF8E8E93),
+                    fontSize = 15.sp,
+                    fontFamily = InterFontFamily
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 3. Action Row (Glass card): Pesan, Telepon, Video
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onAddMemberClick)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null, tint = palette.primary)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("Tambah Anggota", color = palette.primary, style = MaterialTheme.typography.bodyLarge)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Daftar Admin Grup
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(palette.surface)
-        ) {
-            Text(
-                text = "Admin Grup",
-                color = palette.textSecondary,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp)
-            )
-
-            if (admins.isEmpty()) {
-                Text(
-                    text = "Belum ada admin lain yang ditugaskan.",
-                    color = palette.textSecondary,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            } else {
-                admins.forEach { admin ->
-                    val name = admin.displayName.ifBlank { admin.username }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        NeontAvatar(
-                            name = name,
-                            size = 38.dp,
-                            colorHex = admin.avatarColorHex,
-                            ringColor = palette.surface
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = name,
-                            color = palette.textPrimary,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.weight(1f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = "Admin",
-                            color = palette.primary,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold
-                        )
+                    .padding(horizontal = 16.dp)
+                    .shadow(8.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
                     }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+                    .padding(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                GlassGroupActionTile(Icons.AutoMirrored.Filled.Send, "Pesan", Modifier.weight(1f)) { onBackClick() }
+                GlassGroupActionTile(Icons.Default.Call, "Suara", Modifier.weight(1f)) { /* Panggilan grup */ }
+                GlassGroupActionTile(Icons.Default.Videocam, "Video", Modifier.weight(1f)) { /* Video grup */ }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 4. Member List (Glass card, Row padding 12dp, Avatar 40dp, Nama 17sp, Role 13sp #8E8E93)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .shadow(8.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+            ) {
+                Text(
+                    text = "Anggota (${members.size})",
+                    color = Color(0xFF8E8E93),
+                    fontSize = 13.sp,
+                    fontFamily = InterFontFamily,
+                    modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 8.dp)
+                )
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    itemsIndexed(
+                        items = members,
+                        key = { index, user -> user.uid.ifBlank { "member_$index" } }
+                    ) { _, user ->
+                        val name = user.displayName.ifBlank { user.username }
+                        Column(
+                            modifier = Modifier.width(62.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            NeontAvatar(
+                                name = name,
+                                size = 48.dp,
+                                colorHex = user.avatarColorHex,
+                                ringColor = palette.surface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = name,
+                                color = palette.textPrimary,
+                                fontSize = 12.sp,
+                                fontFamily = InterFontFamily,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
+
+                // Tambah Anggota
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onAddMemberClick)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF25D366))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Tambah Anggota", color = Color(0xFF25D366), fontSize = 17.sp, fontFamily = InterFontFamily)
                 }
             }
 
-            if (promotable.isNotEmpty()) {
-                HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Daftar Admin Grup (Glass card)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .shadow(8.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+            ) {
                 Text(
-                    text = "Promosikan Anggota Jadi Admin",
-                    color = palette.primary,
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = "Admin Grup",
+                    color = Color(0xFF8E8E93),
+                    fontSize = 13.sp,
+                    fontFamily = InterFontFamily,
+                    modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 4.dp)
+                )
+
+                if (admins.isEmpty()) {
+                    Text(
+                        text = "Belum ada admin lain yang ditugaskan.",
+                        color = Color(0xFF8E8E93),
+                        fontSize = 15.sp,
+                        fontFamily = InterFontFamily,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                } else {
+                    admins.forEach { admin ->
+                        val name = admin.displayName.ifBlank { admin.username }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            NeontAvatar(
+                                name = name,
+                                size = 40.dp,
+                                colorHex = admin.avatarColorHex,
+                                ringColor = palette.surface
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = name,
+                                color = palette.textPrimary,
+                                fontSize = 17.sp,
+                                fontFamily = InterFontFamily,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = "Admin",
+                                color = Color(0xFF25D366),
+                                fontSize = 13.sp,
+                                fontFamily = InterFontFamily,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                if (promotable.isNotEmpty()) {
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
+                    Text(
+                        text = "Promosikan Anggota Jadi Admin",
+                        color = Color(0xFF25D366),
+                        fontSize = 17.sp,
+                        fontFamily = InterFontFamily,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showPromoteDialog = true }
+                            .padding(horizontal = 16.dp, vertical = 14.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Action: Bisukan & Pesan Sementara
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .shadow(8.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+            ) {
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showPromoteDialog = true }
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Bisukan Notifikasi",
+                        color = palette.textPrimary,
+                        fontSize = 17.sp,
+                        fontFamily = InterFontFamily,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = muted,
+                        onCheckedChange = {
+                            muted = it
+                            onMuteChange(it)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFF25D366)
+                        )
+                    )
+                }
+                HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { /* Opsi pesan sementara */ }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Timer, contentDescription = null, tint = palette.textSecondary, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Pesan Sementara", color = palette.textPrimary, fontSize = 17.sp, fontFamily = InterFontFamily, modifier = Modifier.weight(1f))
+                    Text("Mati", color = Color(0xFF8E8E93), fontSize = 15.sp, fontFamily = InterFontFamily)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Keluar Grup & Laporkan (Merah)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .shadow(8.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+            ) {
+                Text(
+                    text = "Keluar dari Grup",
+                    color = Color(0xFFFF3B30),
+                    fontSize = 17.sp,
+                    fontFamily = InterFontFamily,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showLeaveDialog = true }
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                )
+                HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
+                Text(
+                    text = "Laporkan Grup",
+                    color = Color(0xFFFF3B30),
+                    fontSize = 17.sp,
+                    fontFamily = InterFontFamily,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { /* Laporkan grup */ }
                         .padding(horizontal = 16.dp, vertical = 14.dp)
                 )
             }
+
+            Spacer(modifier = Modifier.height(40.dp))
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Opsi Grup: Bisukan & Pesan Sementara
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(palette.surface)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Bisukan Notifikasi",
-                    color = palette.textPrimary,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = muted,
-                    onCheckedChange = {
-                        muted = it
-                        onMuteChange(it)
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = palette.primary
-                    )
-                )
-            }
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { /* Opsi pesan sementara */ }
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Timer, contentDescription = null, tint = palette.textSecondary, modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("Pesan Sementara", color = palette.textPrimary, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                Text("Mati", color = palette.textSecondary, style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Aksi Destruktif: Keluar Grup & Laporkan
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(palette.surface)
-        ) {
-            Text(
-                text = "Keluar dari Grup",
-                color = palette.destructive,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { showLeaveDialog = true }
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
-            )
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
-            Text(
-                text = "Laporkan Grup",
-                color = palette.destructive,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { /* Laporkan grup */ }
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(36.dp))
     }
 
     if (showLeaveDialog) {
@@ -431,7 +541,7 @@ fun GroupInfoScreen(
 }
 
 @Composable
-private fun GroupActionTile(
+private fun GlassGroupActionTile(
     icon: ImageVector,
     label: String,
     modifier: Modifier,
@@ -439,27 +549,26 @@ private fun GroupActionTile(
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(neontChatPalette().surface)
+            .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
-                .size(36.dp)
+                .size(40.dp)
                 .clip(CircleShape)
-                .background(IosBlue.copy(alpha = 0.12f)),
+                .background(IosBlue.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = null, tint = IosBlue, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = IosBlue, modifier = Modifier.size(24.dp))
         }
         Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = label,
             color = IosBlue,
-            style = MaterialTheme.typography.bodySmall,
             fontSize = 12.sp,
+            fontFamily = InterFontFamily,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )

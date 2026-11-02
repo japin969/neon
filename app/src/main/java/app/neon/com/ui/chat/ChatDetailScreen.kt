@@ -8,7 +8,8 @@ import app.neon.com.ui.viewmodel.ChatViewModel
 
 /**
  * Wrapper stateful untuk ChatDetailContent (stateless).
- * Signature tetap sama persis dengan yang dipanggil NavGraph / MainScreen.
+ * Signature dipertahankan sesuai kontrak NavGraph / MainScreen:
+ * ChatDetailScreen(chatViewModel, chatId, chatPartnerName, chatPartnerAvatar, onBackClick, onCallClick)
  */
 @Composable
 fun ChatDetailScreen(

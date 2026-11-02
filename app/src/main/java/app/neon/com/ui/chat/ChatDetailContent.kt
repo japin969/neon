@@ -1,6 +1,5 @@
 package app.neon.com.ui.chat
 
-import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.fadeIn
@@ -9,6 +8,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -102,7 +102,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import app.neon.com.data.model.ChatItem
 import app.neon.com.data.model.ChatMessage
+import app.neon.com.ui.theme.InterFontFamily
 import app.neon.com.ui.theme.IosBlue
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -124,7 +128,8 @@ private sealed interface ChatEntry {
 }
 
 /**
- * Komponen Stateless Konten Chat Detail dengan 20 parameter sesuai kontrak NavGraph.
+ * Komponen Stateless Konten Chat Detail dengan 20 parameter (NavGraph contract).
+ * Desain: Liquid Glass WhatsApp iOS 26 dengan Haze blur, floating composer, tanpa border bubble.
  */
 @Composable
 fun ChatDetailContent(
@@ -150,8 +155,9 @@ fun ChatDetailContent(
     onStarMessage: (ChatMessage, Boolean) -> Unit = { _, _ -> }
 ) {
     val palette = neontChatPalette()
+    val isDark = isSystemInDarkTheme()
+    val hazeState = remember { HazeState() }
     val focusManager = LocalFocusManager.current
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val maxBubbleWidth = (LocalConfiguration.current.screenWidthDp * 0.8f).dp
@@ -195,180 +201,230 @@ fun ChatDetailContent(
         }
     }
 
-    Column(
+    // Wallpaper Background dengan radial gradient
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.detailBackground)
+            .background(chatWallpaperBrush(isDark))
             .imePadding()
     ) {
-        // Top Bar WhatsApp iOS
-        ChatDetailTopBar(
-            name = chatPartnerName,
-            isOnline = isPartnerOnline,
-            statusText = statusText,
-            palette = palette,
-            onBack = onBackClick,
-            onCall = { onCallClick(false) },
-            onVideo = { onCallClick(true) },
-            onMore = onMoreClick,
-            onTitleClick = onTopBarClick
-        )
-
-        // Banner Pesan Disematkan (Pinned Message)
-        if (pinned != null) {
-            PinnedBanner(
-                message = pinned,
+        Column(modifier = Modifier.fillMaxSize()) {
+            // ==========================================
+            // B. TOP BAR (LIQUID GLASS)
+            // ==========================================
+            ChatDetailTopBar(
+                name = chatPartnerName,
+                isOnline = isPartnerOnline,
+                statusText = statusText,
                 palette = palette,
-                onClick = { scrollToMessage(pinned.msgId) },
-                onUnpin = {
-                    pinnedId = null
-                    onPinMessage(pinned, false)
-                }
+                hazeState = hazeState,
+                isDark = isDark,
+                onBack = onBackClick,
+                onCall = { onCallClick(false) },
+                onVideo = { onCallClick(true) },
+                onMore = onMoreClick,
+                onTitleClick = onTopBarClick
             )
-        }
 
-        // Area Daftar Pesan & Empty State
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-        ) {
-            if (messages.isEmpty()) {
-                // Empty state Neon AI dengan chip rekomendasi
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text("✨", fontSize = 60.sp)
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Text(
-                        text = "Neon AI",
-                        color = palette.textPrimary,
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Ada yang bisa saya bantu hari ini?",
-                        color = palette.textSecondary,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Spacer(modifier = Modifier.height(28.dp))
+            // ==========================================
+            // C. PINNED BANNER (LIQUID GLASS)
+            // ==========================================
+            if (pinned != null) {
+                PinnedBanner(
+                    message = pinned,
+                    palette = palette,
+                    hazeState = hazeState,
+                    isDark = isDark,
+                    onClick = { scrollToMessage(pinned.msgId) },
+                    onUnpin = {
+                        pinnedId = null
+                        onPinMessage(pinned, false)
+                    }
+                )
+            }
 
-                    val promptSuggestions = listOf(
-                        "Rekomendasi playlist musik santai",
-                        "Trik produktif mengatur waktu",
-                        "Tulis pesan ulang tahun kreatif"
-                    )
-                    promptSuggestions.forEach { prompt ->
-                        Box(
+            // ==========================================
+            // D. CHAT AREA (LazyColumn, hazeSource)
+            // ==========================================
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                if (messages.isEmpty()) {
+                    // H. EMPTY STATE (NEON AI GLASS CARD)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 5.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(palette.surface)
-                                .clickable {
-                                    input = prompt
-                                    send()
-                                }
-                                .padding(14.dp)
-                        ) {
-                            Text(
-                                text = prompt,
-                                color = palette.textPrimary,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
-                }
-            } else {
-                LazyColumn(
-                    state = listState,
-                    reverseLayout = true,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) { focusManager.clearFocus() },
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                    items(
-                        items = entries,
-                        key = { entry ->
-                            when (entry) {
-                                is ChatEntry.Day -> "day_${entry.key}"
-                                is ChatEntry.Msg -> {
-                                    val m = entry.message
-                                    if (m.msgId.isNotBlank()) "m_${m.msgId}" else "t_${m.timestamp}_${m.senderId}"
-                                }
-                            }
-                        }
-                    ) { entry ->
-                        when (entry) {
-                            is ChatEntry.Day -> DayPill(label = entry.label, palette = palette)
-                            is ChatEntry.Msg -> {
-                                val message = entry.message
-                                MessageBubbleRow(
-                                    message = message,
-                                    repliedTo = message.replyTo?.let { byId[it] },
-                                    isGroup = isGroup,
-                                    isStarred = message.msgId in starredIds,
-                                    palette = palette,
-                                    maxBubbleWidth = maxBubbleWidth,
-                                    onSwipeReply = { replyingToId = message.msgId },
-                                    onLongPress = { if (message.msgId.isNotBlank()) actionMessageId = message.msgId },
-                                    onQuoteClick = { message.replyTo?.let(scrollToMessage) }
+                                .shadow(
+                                    elevation = 16.dp,
+                                    shape = RoundedCornerShape(24.dp),
+                                    ambientColor = Color.Black.copy(alpha = 0.15f),
+                                    spotColor = Color.Black.copy(alpha = 0.20f)
                                 )
+                                .clip(RoundedCornerShape(24.dp))
+                                .hazeEffect(state = hazeState) {
+                                    blurRadius = 20.dp
+                                }
+                                .background(
+                                    if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                                )
+                                .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(24.dp))
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text("✨", fontSize = 64.sp)
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Text(
+                                text = "Neon AI",
+                                color = palette.textPrimary,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Ada yang bisa saya bantu?",
+                                color = palette.textSecondary,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            val promptSuggestions = listOf(
+                                "Rekomendasi playlist musik santai",
+                                "Trik produktif mengatur waktu",
+                                "Tulis pesan ulang tahun kreatif"
+                            )
+                            promptSuggestions.forEach { prompt ->
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(
+                                            if (isDark) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.55f)
+                                        )
+                                        .border(0.5.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(16.dp))
+                                        .clickable {
+                                            input = prompt
+                                            send()
+                                        }
+                                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                                ) {
+                                    Text(
+                                        text = prompt,
+                                        color = palette.textPrimary,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        reverseLayout = true,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .hazeSource(state = hazeState)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { focusManager.clearFocus() },
+                        contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
+                    ) {
+                        items(
+                            items = entries,
+                            key = { entry ->
+                                when (entry) {
+                                    is ChatEntry.Day -> "day_${entry.key}"
+                                    is ChatEntry.Msg -> {
+                                        val m = entry.message
+                                        if (m.msgId.isNotBlank()) "m_${m.msgId}" else "t_${m.timestamp}_${m.senderId}"
+                                    }
+                                }
+                            }
+                        ) { entry ->
+                            when (entry) {
+                                is ChatEntry.Day -> DayPill(label = entry.label, hazeState = hazeState, isDark = isDark)
+                                is ChatEntry.Msg -> {
+                                    val message = entry.message
+                                    MessageBubbleRow(
+                                        message = message,
+                                        repliedTo = message.replyTo?.let { byId[it] },
+                                        isGroup = isGroup,
+                                        isStarred = message.msgId in starredIds,
+                                        palette = palette,
+                                        isDark = isDark,
+                                        hazeState = hazeState,
+                                        maxBubbleWidth = maxBubbleWidth,
+                                        onSwipeReply = { replyingToId = message.msgId },
+                                        onLongPress = { if (message.msgId.isNotBlank()) actionMessageId = message.msgId },
+                                        onQuoteClick = { message.replyTo?.let(scrollToMessage) }
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // Tombol Melayang Scroll ke Pesan Terbaru
-            androidx.compose.animation.AnimatedVisibility(
-                visible = showScrollToBottom,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(14.dp),
-                enter = scaleIn() + fadeIn(),
-                exit = scaleOut() + fadeOut()
-            ) {
-                Box(
+                // G. Tombol Melayang Scroll ke Bawah (Glass circle 40dp, shadow 4dp, KeyboardArrowDown)
+                AnimatedVisibility(
+                    visible = showScrollToBottom,
                     modifier = Modifier
-                        .size(38.dp)
-                        .shadow(4.dp, CircleShape)
-                        .background(palette.surface, CircleShape)
-                        .clip(CircleShape)
-                        .clickable { scope.launch { listState.animateScrollToItem(0) } },
-                    contentAlignment = Alignment.Center
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 16.dp, bottom = 72.dp),
+                    enter = scaleIn() + fadeIn(),
+                    exit = scaleOut() + fadeOut()
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Scroll ke bawah",
-                        tint = palette.textSecondary
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .shadow(4.dp, CircleShape)
+                            .clip(CircleShape)
+                            .hazeEffect(state = hazeState) {
+                                blurRadius = 15.dp
+                            }
+                            .background(
+                                if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.85f)
+                            )
+                            .border(0.5.dp, Color.White.copy(alpha = 0.40f), CircleShape)
+                            .clickable { scope.launch { listState.animateScrollToItem(0) } },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Scroll ke bawah",
+                            tint = palette.textSecondary
+                        )
+                    }
                 }
             }
-        }
 
-        // Input Composer WhatsApp iOS
-        ChatComposer(
-            value = input,
-            onValueChange = { if (it.length <= MAX_MESSAGE_LENGTH) input = it },
-            replyTo = replyingTo,
-            palette = palette,
-            onCancelReply = { replyingToId = null },
-            onSend = send,
-            onMicClick = onMicClick,
-            onAttachClick = { /* Lampiran media */ }
-        )
+            // ==========================================
+            // F. COMPOSER (WAJIB FLOATING DI ATAS WALLPAPER)
+            // ==========================================
+            ChatComposer(
+                value = input,
+                onValueChange = { if (it.length <= MAX_MESSAGE_LENGTH) input = it },
+                replyTo = replyingTo,
+                palette = palette,
+                hazeState = hazeState,
+                isDark = isDark,
+                onCancelReply = { replyingToId = null },
+                onSend = send,
+                onMicClick = onMicClick,
+                onAttachClick = { /* Lampiran media */ }
+            )
+        }
     }
 
-    // Modal Context Menu 12 Aksi saat Long-Press Bubble
+    // Modal Context Menu Popover Liquid Glass saat Long-Press Bubble
     val actionMessage = actionMessageId?.let { byId[it] }
     if (actionMessage != null) {
         MessageContextMenu(
@@ -443,7 +499,7 @@ fun ChatDetailContent(
         )
     }
 
-    // Dialog Konfirmasi Hapus Pesan (Untuk Saya / Untuk Semua Orang)
+    // Dialog Konfirmasi Hapus Pesan
     val deleteTarget = deleteTargetId?.let { byId[it] }
     if (deleteTarget != null) {
         DeleteMessageDialog(
@@ -471,7 +527,7 @@ fun ChatDetailContent(
         )
     }
 
-    // Dialog Info Pesan (Waktu terkirim / terbaca)
+    // Dialog Info Pesan
     val infoTarget = showInfoTargetId?.let { byId[it] }
     if (infoTarget != null) {
         MessageInfoDialog(
@@ -483,7 +539,8 @@ fun ChatDetailContent(
 }
 
 /**
- * Top Bar Chat Detail mirip WhatsApp iOS
+ * Top Bar Chat Detail Liquid Glass (WhatsApp iOS 26)
+ * Row padding 4dp/4dp, hazeEffect blur 15dp alpha 0.7, tanpa border tebal
  */
 @Composable
 private fun ChatDetailTopBar(
@@ -491,26 +548,38 @@ private fun ChatDetailTopBar(
     isOnline: Boolean,
     statusText: String?,
     palette: NeontChatPalette,
+    hazeState: HazeState,
+    isDark: Boolean,
     onBack: () -> Unit,
     onCall: () -> Unit,
     onVideo: () -> Unit,
     onMore: () -> Unit,
     onTitleClick: () -> Unit
 ) {
-    Column {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .hazeEffect(state = hazeState) {
+                blurRadius = 15.dp
+            }
+            .background(
+                if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.72f)
+            )
+            .border(0.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(0.dp))
+            .statusBarsPadding()
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(palette.composerBackground)
-                .statusBarsPadding()
-                .padding(horizontal = 4.dp, vertical = 6.dp),
+                .padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Kembali",
-                    tint = IosBlue
+                    tint = IosBlue,
+                    modifier = Modifier.size(24.dp)
                 )
             }
             Row(
@@ -525,8 +594,8 @@ private fun ChatDetailTopBar(
                     Text(
                         text = name,
                         color = palette.textPrimary,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -534,8 +603,8 @@ private fun ChatDetailTopBar(
                     if (!status.isNullOrBlank()) {
                         Text(
                             text = status,
-                            color = if (isOnline) palette.primary else palette.timestamp,
-                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isOnline) palette.primary else palette.textSecondary,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -543,51 +612,60 @@ private fun ChatDetailTopBar(
                 }
             }
             IconButton(onClick = onVideo) {
-                Icon(Icons.Default.Videocam, contentDescription = "Video", tint = IosBlue)
+                Icon(Icons.Default.Videocam, contentDescription = "Video", tint = IosBlue, modifier = Modifier.size(24.dp))
             }
             IconButton(onClick = onCall) {
-                Icon(Icons.Default.Call, contentDescription = "Telepon", tint = IosBlue)
+                Icon(Icons.Default.Call, contentDescription = "Telepon", tint = IosBlue, modifier = Modifier.size(24.dp))
             }
             IconButton(onClick = onMore) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Lainnya", tint = IosBlue)
+                Icon(Icons.Default.MoreVert, contentDescription = "Lainnya", tint = IosBlue, modifier = Modifier.size(24.dp))
             }
         }
-        HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
     }
 }
 
 /**
- * Banner Pesan yang Disematkan
+ * Banner Pesan yang Disematkan (Glass alpha 0.6, Icon PushPin 16dp #25D366, text 12sp, close 20dp)
  */
 @Composable
 private fun PinnedBanner(
     message: ChatMessage,
     palette: NeontChatPalette,
+    hazeState: HazeState,
+    isDark: Boolean,
     onClick: () -> Unit,
     onUnpin: () -> Unit
 ) {
-    Column {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .hazeEffect(state = hazeState) {
+                blurRadius = 15.dp
+            }
+            .background(
+                if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.60f)
+            )
+            .border(0.5.dp, Color.White.copy(alpha = 0.20f), RoundedCornerShape(0.dp))
+            .clickable(onClick = onClick)
+            .padding(12.dp)
+    ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(palette.composerBackground)
-                .clickable(onClick = onClick)
-                .padding(horizontal = 14.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.PushPin, contentDescription = null, tint = palette.primary, modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.PushPin, contentDescription = null, tint = Color(0xFF25D366), modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Pesan disematkan",
-                    color = palette.primary,
-                    style = MaterialTheme.typography.labelMedium,
+                    color = Color(0xFF25D366),
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = if (message.isDeleted) "Pesan ini telah dihapus" else message.text,
-                    color = palette.timestamp,
-                    style = MaterialTheme.typography.bodySmall,
+                    color = palette.textSecondary,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -597,39 +675,48 @@ private fun PinnedBanner(
                 contentDescription = "Lepas sematan",
                 tint = palette.textSecondary,
                 modifier = Modifier
-                    .size(18.dp)
+                    .size(20.dp)
                     .clickable(onClick = onUnpin)
             )
         }
-        HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
     }
 }
 
 /**
- * Pemisah Tanggal / Hari (Day Pill)
+ * Pemisah Hari (Day Pill Glass rounded 10dp, text 12sp #8E8E93)
  */
 @Composable
-private fun DayPill(label: String, palette: NeontChatPalette) {
+private fun DayPill(label: String, hazeState: HazeState, isDark: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = label,
-            color = palette.timestamp,
-            style = MaterialTheme.typography.bodySmall,
+        Box(
             modifier = Modifier
                 .clip(RoundedCornerShape(10.dp))
-                .background(palette.surface.copy(alpha = 0.94f))
+                .hazeEffect(state = hazeState) {
+                    blurRadius = 10.dp
+                }
+                .background(
+                    if (isDark) Color.Black.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.70f)
+                )
+                .border(0.5.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(10.dp))
                 .padding(horizontal = 12.dp, vertical = 4.dp)
-        )
+        ) {
+            Text(
+                text = label,
+                color = Color(0xFF8E8E93),
+                fontSize = 12.sp,
+                fontFamily = InterFontFamily
+            )
+        }
     }
 }
 
 /**
- * Gesture Geser untuk Membalas Pesan (Swipe-to-Reply)
+ * Container Geser untuk Membalas (Swipe to Reply)
  */
 @Composable
 private fun SwipeToReplyContainer(
@@ -690,7 +777,9 @@ private fun SwipeToReplyContainer(
 }
 
 /**
- * Gelembung Pesan iMessage & WhatsApp iOS Style (Tail 4dp di sudut bawah)
+ * Bubble WhatsApp iOS 26 Liquid Glass:
+ * Outgoing: #DCF8C6 (light) / #005C4B (dark), Shape RoundedCornerShape(18,18,18,4), TANPA BORDER
+ * Incoming: #FFFFFF (light) / #202C33 (dark), Shape RoundedCornerShape(18,18,4,18), TANPA BORDER
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -700,6 +789,8 @@ private fun MessageBubbleRow(
     isGroup: Boolean,
     isStarred: Boolean,
     palette: NeontChatPalette,
+    isDark: Boolean,
+    hazeState: HazeState,
     maxBubbleWidth: Dp,
     onSwipeReply: () -> Unit,
     onLongPress: () -> Unit,
@@ -708,11 +799,16 @@ private fun MessageBubbleRow(
     val fromMe = message.isFromMe
     val haptic = LocalHapticFeedback.current
 
-    // Sudut 18dp dengan ekor sudut 4dp di bawah
     val bubbleShape = if (fromMe) {
         RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomEnd = 4.dp, bottomStart = 18.dp)
     } else {
         RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomEnd = 18.dp, bottomStart = 4.dp)
+    }
+
+    val bubbleBg = if (fromMe) {
+        if (isDark) Color(0xFF005C4B) else Color(0xFFDCF8C6)
+    } else {
+        if (isDark) Color(0xFF202C33) else Color(0xFFFFFFFF)
     }
 
     val reactionCounts = remember(message.reactions) {
@@ -730,11 +826,18 @@ private fun MessageBubbleRow(
             horizontalArrangement = if (fromMe) Arrangement.End else Arrangement.Start
         ) {
             Column(horizontalAlignment = if (fromMe) Alignment.End else Alignment.Start) {
+                // Container Bubble tanpa border
                 Column(
                     modifier = Modifier
                         .widthIn(max = maxBubbleWidth)
+                        .shadow(
+                            elevation = 2.dp,
+                            shape = bubbleShape,
+                            ambientColor = Color.Black.copy(alpha = 0.08f),
+                            spotColor = Color.Black.copy(alpha = 0.12f)
+                        )
                         .clip(bubbleShape)
-                        .background(if (fromMe) palette.bubbleOutgoing else palette.bubbleIncoming)
+                        .background(bubbleBg)
                         .combinedClickable(
                             onClick = {},
                             onLongClick = {
@@ -757,30 +860,34 @@ private fun MessageBubbleRow(
                         Spacer(modifier = Modifier.height(2.dp))
                     }
 
-                    // Kutipan Pesan yang Dibalas (Quote Reply dengan Border Kiri Hijau)
+                    // Kutipan Pesan yang Dibalas (Quote Reply: border kiri 3dp #25D366, glass background alpha 0.15)
                     if (message.replyTo != null && !message.isDeleted) {
                         ReplyQuoteBanner(repliedTo = repliedTo, palette = palette, onClick = onQuoteClick)
                         Spacer(modifier = Modifier.height(4.dp))
                     }
 
-                    // Konten Teks Pesan
+                    // Konten Teks Pesan (15sp)
                     if (message.isDeleted) {
                         Text(
                             text = "Pesan ini telah dihapus",
-                            color = palette.timestamp,
+                            color = Color(0xFF8E8E93),
+                            fontSize = 15.sp,
+                            fontFamily = InterFontFamily,
                             style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic)
                         )
                     } else {
                         Text(
                             text = message.text,
                             color = palette.textPrimary,
-                            style = MaterialTheme.typography.bodyLarge
+                            fontSize = 15.sp,
+                            fontFamily = InterFontFamily,
+                            lineHeight = 20.sp
                         )
                     }
 
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    // Baris Informasi Bawah: Berbintang, Diedit, Waktu, Centang
+                    // Baris Informasi: Berbintang, Diedit, Waktu (11sp #8E8E93), Centang
                     Row(
                         modifier = Modifier.align(Alignment.End),
                         verticalAlignment = Alignment.CenterVertically
@@ -789,29 +896,29 @@ private fun MessageBubbleRow(
                             Icon(
                                 imageVector = Icons.Default.Star,
                                 contentDescription = "Berbintang",
-                                tint = palette.timestamp,
+                                tint = Color(0xFF8E8E93),
                                 modifier = Modifier.size(11.dp)
                             )
                             Spacer(modifier = Modifier.width(3.dp))
                         }
                         if (message.isEdited && !message.isDeleted) {
-                            Text(text = "Diedit", color = palette.timestamp, style = MaterialTheme.typography.labelSmall)
+                            Text(text = "Diedit", color = Color(0xFF8E8E93), fontSize = 11.sp, fontFamily = InterFontFamily)
                             Spacer(modifier = Modifier.width(4.dp))
                         }
-                        Text(text = message.time, color = palette.timestamp, style = MaterialTheme.typography.labelSmall)
+                        Text(text = message.time, color = Color(0xFF8E8E93), fontSize = 11.sp, fontFamily = InterFontFamily)
                         if (fromMe && !message.isDeleted) {
                             Spacer(modifier = Modifier.width(4.dp))
                             Icon(
                                 imageVector = if (message.isRead) Icons.Default.DoneAll else Icons.Default.Done,
                                 contentDescription = if (message.isRead) "Dibaca" else "Terkirim",
-                                tint = if (message.isRead) ReadTickColor else palette.timestamp,
+                                tint = if (message.isRead) ReadTickColor else Color(0xFF8E8E93),
                                 modifier = Modifier.size(14.dp)
                             )
                         }
                     }
                 }
 
-                // Reaction Chip di bawah gelembung pesan
+                // Reaction Chip Liquid Glass (Glass rounded 12dp, padding 6dp, emoji 13sp + count 11sp)
                 if (reactionCounts.isNotEmpty() && !message.isDeleted) {
                     Row(
                         modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 2.dp),
@@ -821,7 +928,13 @@ private fun MessageBubbleRow(
                             Row(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(palette.surface)
+                                    .hazeEffect(state = hazeState) {
+                                        blurRadius = 10.dp
+                                    }
+                                    .background(
+                                        if (isDark) Color.Black.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.70f)
+                                    )
+                                    .border(0.5.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(12.dp))
                                     .padding(horizontal = 6.dp, vertical = 2.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -830,8 +943,9 @@ private fun MessageBubbleRow(
                                     Spacer(modifier = Modifier.width(2.dp))
                                     Text(
                                         text = count.toString(),
-                                        color = palette.timestamp,
-                                        style = MaterialTheme.typography.labelSmall
+                                        color = Color(0xFF8E8E93),
+                                        fontSize = 11.sp,
+                                        fontFamily = InterFontFamily
                                     )
                                 }
                             }
@@ -844,7 +958,7 @@ private fun MessageBubbleRow(
 }
 
 /**
- * Kotak Kutipan Balasan Pesan dengan Garis Sisi Hijau
+ * Kotak Balasan Pesan (Reply Quote: border kiri 3dp #25D366, glass background alpha 0.15)
  */
 @Composable
 private fun ReplyQuoteBanner(
@@ -868,13 +982,13 @@ private fun ReplyQuoteBanner(
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
             .clip(RoundedCornerShape(8.dp))
-            .background(palette.textPrimary.copy(alpha = 0.07f))
+            .background(Color.Black.copy(alpha = 0.08f))
             .clickable(onClick = onClick)
     ) {
-        // Border Kiri Hijau
+        // Border Kiri 3dp #25D366
         Box(
             modifier = Modifier
-                .width(4.dp)
+                .width(3.dp)
                 .fillMaxHeight()
                 .background(Color(0xFF25D366))
         )
@@ -891,7 +1005,7 @@ private fun ReplyQuoteBanner(
             }
             Text(
                 text = snippet,
-                color = palette.timestamp,
+                color = palette.textSecondary,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -901,7 +1015,11 @@ private fun ReplyQuoteBanner(
 }
 
 /**
- * Composer Pesan WhatsApp iOS: rounded 20dp, ikon + kiri, tombol kirim/mic kanan
+ * Composer Pesan (WAJIB FLOATING DI ATAS WALLPAPER):
+ * - Floating di atas wallpaper, padding horizontal 8dp, bottom 8dp
+ * - Container: hazeEffect (blur 20dp) alpha 0.7, rounded 22dp, border 0.5dp White alpha 0.35
+ * - Input: BasicTextField, maxLines 5, placeholder "Ketik pesan" 17sp #8E8E93
+ * - Send/Mic: glass circle 44dp, Brush.linearGradient(#25D366, #128C7E), border 0.5dp White alpha 0.4
  */
 @Composable
 private fun ChatComposer(
@@ -909,29 +1027,37 @@ private fun ChatComposer(
     onValueChange: (String) -> Unit,
     replyTo: ChatMessage?,
     palette: NeontChatPalette,
+    hazeState: HazeState,
+    isDark: Boolean,
     onCancelReply: () -> Unit,
     onSend: () -> Unit,
     onMicClick: () -> Unit,
     onAttachClick: () -> Unit
 ) {
-    val inputColor = if (isSystemInDarkTheme()) Color(0xFF2A3942) else Color.White
     val hasText = value.isNotBlank()
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(palette.composerBackground)
             .navigationBarsPadding()
+            .padding(horizontal = 8.dp, vertical = 8.dp)
     ) {
-        HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
-
-        // Banner Pratinjau Balasan
+        // Pratinjau Balasan Floating
         AnimatedVisibility(visible = replyTo != null) {
             if (replyTo != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 12.dp, end = 4.dp, top = 8.dp),
+                        .padding(bottom = 6.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .hazeEffect(state = hazeState) {
+                            blurRadius = 15.dp
+                        }
+                        .background(
+                            if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.75f)
+                        )
+                        .border(0.5.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(16.dp))
+                        .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(modifier = Modifier.weight(1f)) {
@@ -948,11 +1074,25 @@ private fun ChatComposer(
             }
         }
 
-        // Input Baris Composer
+        // Floating Glass Composer Container
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .shadow(
+                    elevation = 12.dp,
+                    shape = RoundedCornerShape(22.dp),
+                    ambientColor = Color.Black.copy(alpha = 0.15f),
+                    spotColor = Color.Black.copy(alpha = 0.20f)
+                )
+                .clip(RoundedCornerShape(22.dp))
+                .hazeEffect(state = hazeState) {
+                    blurRadius = 20.dp
+                }
+                .background(
+                    if (isDark) Color.Black.copy(alpha = 0.70f) else Color.White.copy(alpha = 0.72f)
+                )
+                .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(22.dp))
+                .padding(horizontal = 6.dp, vertical = 4.dp),
             verticalAlignment = Alignment.Bottom
         ) {
             // Ikon Tambah (+) Media di Sisi Kiri
@@ -964,55 +1104,60 @@ private fun ChatComposer(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Lampirkan",
                     tint = IosBlue,
-                    modifier = Modifier.size(26.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
-            // Input Teks rounded 20dp
+            // Input Teks
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 38.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(inputColor)
-                    .padding(horizontal = 14.dp, vertical = 9.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
                 if (value.isEmpty()) {
                     Text(
                         text = "Ketik pesan",
-                        color = palette.textSecondary,
-                        style = MaterialTheme.typography.bodyLarge
+                        color = Color(0xFF8E8E93),
+                        fontSize = 17.sp,
+                        fontFamily = InterFontFamily
                     )
                 }
                 BasicTextField(
                     value = value,
                     onValueChange = onValueChange,
                     maxLines = 5,
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(color = palette.textPrimary),
+                    textStyle = TextStyle(
+                        color = palette.textPrimary,
+                        fontSize = 17.sp,
+                        fontFamily = InterFontFamily
+                    ),
                     cursorBrush = SolidColor(palette.primary),
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            Spacer(modifier = Modifier.width(6.dp))
+            Spacer(modifier = Modifier.width(4.dp))
 
-            // Tombol Kirim / Pesan Suara
+            // Tombol Kirim / Pesan Suara (Glass Circle 44dp, Brush linearGradient #25D366, #128C7E, border 0.5dp White alpha 0.4)
             Box(
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(44.dp),
                 contentAlignment = Alignment.Center
             ) {
-                androidx.compose.animation.AnimatedVisibility(
+                AnimatedVisibility(
                     visible = hasText,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut()
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(44.dp)
+                            .shadow(6.dp, CircleShape, ambientColor = Color(0xFF25D366).copy(alpha = 0.35f))
                             .clip(CircleShape)
-                            .background(Color(0xFF25D366))
+                            .background(glassGreenGradientBrush())
+                            .border(0.5.dp, Color.White.copy(alpha = 0.40f), CircleShape)
                             .clickable(onClick = onSend),
                         contentAlignment = Alignment.Center
                     ) {
@@ -1020,21 +1165,23 @@ private fun ChatComposer(
                             imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Kirim",
                             tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
 
-                androidx.compose.animation.AnimatedVisibility(
+                AnimatedVisibility(
                     visible = !hasText,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut()
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(44.dp)
+                            .shadow(6.dp, CircleShape, ambientColor = Color(0xFF25D366).copy(alpha = 0.35f))
                             .clip(CircleShape)
-                            .background(Color(0xFF25D366))
+                            .background(glassGreenGradientBrush())
+                            .border(0.5.dp, Color.White.copy(alpha = 0.40f), CircleShape)
                             .clickable(onClick = onMicClick),
                         contentAlignment = Alignment.Center
                     ) {
@@ -1042,7 +1189,7 @@ private fun ChatComposer(
                             imageVector = Icons.Default.Mic,
                             contentDescription = "Pesan suara",
                             tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
@@ -1052,7 +1199,7 @@ private fun ChatComposer(
 }
 
 /**
- * Dialog Hapus Pesan (Hapus untuk Saya / Hapus untuk Semua Orang)
+ * Dialog Hapus Pesan
  */
 @Composable
 private fun DeleteMessageDialog(
@@ -1065,8 +1212,9 @@ private fun DeleteMessageDialog(
         Column(
             modifier = Modifier
                 .width(280.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(20.dp))
                 .background(palette.surface)
+                .border(0.5.dp, Color.White.copy(alpha = 0.30f), RoundedCornerShape(20.dp))
         ) {
             Text(
                 text = "Hapus pesan?",
@@ -1214,7 +1362,7 @@ private fun ForwardDialog(
 }
 
 /**
- * Dialog Informasi Pesan (Waktu status kirim dan baca)
+ * Dialog Informasi Pesan
  */
 @Composable
 private fun MessageInfoDialog(

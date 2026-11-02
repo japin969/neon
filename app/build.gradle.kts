@@ -55,6 +55,7 @@ android {
 }
 
 dependencies {
+    implementation("dev.chrisbanes.haze:haze:1.6.10")
     // Desugaring buat Android 7
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 

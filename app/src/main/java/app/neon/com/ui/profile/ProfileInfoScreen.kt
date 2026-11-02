@@ -3,7 +3,9 @@ package app.neon.com.ui.profile
 import android.app.Activity
 import android.view.WindowManager
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,8 +16,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +27,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Timer
@@ -50,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -60,14 +63,23 @@ import androidx.compose.ui.unit.sp
 import app.neon.com.data.model.User
 import app.neon.com.ui.chat.NeontAvatar
 import app.neon.com.ui.chat.NeontChatPalette
+import app.neon.com.ui.chat.chatWallpaperBrush
 import app.neon.com.ui.chat.neontChatPalette
+import app.neon.com.ui.theme.InterFontFamily
 import app.neon.com.ui.theme.IosBlue
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 private val ProfileTabs = listOf("Media", "File", "Tautan")
 
+/**
+ * ProfileInfoScreen (WhatsApp iOS 26 Liquid Glass)
+ * - FLAG_SECURE: Wajib di Activity Lifecycle
+ * - Glass TopBar, Header Card, Action Card, Info Card, Destructive Card
+ */
 @Composable
 fun ProfileInfoScreen(
     user: User,
@@ -82,9 +94,11 @@ fun ProfileInfoScreen(
     linksContent: @Composable () -> Unit = { EmptyTabMessage("Belum ada tautan") }
 ) {
     val palette = neontChatPalette()
+    val isDark = isSystemInDarkTheme()
     val context = LocalContext.current
+    val hazeState = remember { HazeState() }
 
-    // Blokir screenshot demi privasi via FLAG_SECURE Activity Lifecycle
+    // FLAG_SECURE: Wajib (addFlags di Activity, clear di onDispose)
     DisposableEffect(Unit) {
         val activity = context as? Activity
         activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -101,195 +115,283 @@ fun ProfileInfoScreen(
     val displayName = user.displayName.ifBlank { user.username }
     val joinedText = remember(user.createdAt) { formatJoinDate(user.createdAt) }
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(palette.listBackground)
-            .verticalScroll(rememberScrollState())
+            .background(chatWallpaperBrush(isDark))
     ) {
-        // Top Nav Back
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 4.dp)
-        ) {
-            IconButton(onClick = onBackClick) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Kembali",
-                    tint = IosBlue
-                )
-            }
-        }
-
-        // Header: Avatar Besar 96dp di Tengah, Nama 28sp Bold, Username/Nomor 15sp Abu
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
-            NeontAvatar(
-                name = displayName,
-                size = 96.dp,
-                colorHex = user.avatarColorHex,
-                ringColor = palette.listBackground
-            )
-            Spacer(modifier = Modifier.height(14.dp))
-            Text(
-                text = displayName,
-                color = palette.textPrimary,
-                style = MaterialTheme.typography.displayMedium.copy(fontSize = 28.sp),
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            if (user.username.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
+            // 1. TopBar (Glass): Back 24dp #007AFF, Title "Info Kontak" 17sp SemiBold
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 15.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.65f) else Color.White.copy(alpha = 0.72f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(0.dp))
+                    .statusBarsPadding()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Kembali",
+                            tint = IosBlue,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Text(
+                        text = "Info Kontak",
+                        fontFamily = InterFontFamily,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 17.sp,
+                        color = palette.textPrimary,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 2. Header (Glass card, rounded 24dp, padding 16dp): Avatar 96dp (border 2dp White alpha 0.4, shadow), Nama 28sp Bold, Nomor 15sp
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .shadow(10.dp, RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(24.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(24.dp))
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .shadow(12.dp, CircleShape)
+                        .border(2.dp, Color.White.copy(alpha = 0.40f), CircleShape)
+                ) {
+                    NeontAvatar(
+                        name = displayName,
+                        size = 96.dp,
+                        colorHex = user.avatarColorHex,
+                        ringColor = palette.surface
+                    )
+                }
+                Spacer(modifier = Modifier.height(14.dp))
                 Text(
-                    text = "@${user.username}",
-                    color = palette.textSecondary,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 15.sp)
+                    text = displayName,
+                    color = palette.textPrimary,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = InterFontFamily,
+                    textAlign = TextAlign.Center
                 )
+                if (user.username.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "@${user.username}",
+                        color = Color(0xFF8E8E93),
+                        fontSize = 15.sp,
+                        fontFamily = InterFontFamily
+                    )
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-        // Action Row WhatsApp iOS: 4 Tombol Bulat (Pesan, Telepon, Video, Cari)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            ContactActionTile(Icons.AutoMirrored.Filled.Send, "Pesan", palette, Modifier.weight(1f), onMessageClick)
-            ContactActionTile(Icons.Default.Call, "Telepon", palette, Modifier.weight(1f)) { onCallClick(false) }
-            ContactActionTile(Icons.Default.Videocam, "Video", palette, Modifier.weight(1f)) { onCallClick(true) }
-            ContactActionTile(Icons.Default.Search, "Cari", palette, Modifier.weight(1f)) { /* Cari percakapan */ }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Info Section: Tentang, Username, Bergabung
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(palette.surface)
-        ) {
-            InfoSectionRow("Tentang", user.bio.ifBlank { "Hey there! I am using Neont." }, palette)
-            if (user.username.isNotBlank()) {
-                HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
-                InfoSectionRow("Username", "@${user.username}", palette)
-            }
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
-            InfoSectionRow("Bergabung", joinedText, palette)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Action List Pengaturan Kontak: Bisukan, Pesan sementara, Wallpaper, Simpan
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(palette.surface)
-        ) {
+            // 3. Action Row (Glass card, rounded 20dp, padding 16dp): 4 tombol Pesan, Telepon, Video, Cari
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Bisukan Notifikasi",
-                    color = palette.textPrimary,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = isMuted,
-                    onCheckedChange = { isMuted = it },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = palette.primary
+                    .padding(horizontal = 16.dp)
+                    .shadow(8.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
                     )
-                )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+                    .padding(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                GlassContactActionTile(Icons.AutoMirrored.Filled.Send, "Pesan", Modifier.weight(1f), onMessageClick)
+                GlassContactActionTile(Icons.Default.Call, "Telepon", Modifier.weight(1f)) { onCallClick(false) }
+                GlassContactActionTile(Icons.Default.Videocam, "Video", Modifier.weight(1f)) { onCallClick(true) }
+                GlassContactActionTile(Icons.Default.Search, "Cari", Modifier.weight(1f)) { /* Cari chat */ }
             }
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
 
-            RowActionItem(Icons.Default.Timer, "Pesan Sementara", "Mati", palette) { /* Pesan sementara */ }
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
+            Spacer(modifier = Modifier.height(14.dp))
 
-            RowActionItem(Icons.Default.Wallpaper, "Wallpaper & Suara", null, palette) { /* Wallpaper */ }
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
+            // 4. Info Section (Glass card, rounded 20dp): Label 13sp #8E8E93, Value 17sp
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .shadow(8.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+            ) {
+                GlassInfoSectionRow("Tentang", user.bio.ifBlank { "Hey there! I am using Neont." }, palette)
+                if (user.username.isNotBlank()) {
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
+                    GlassInfoSectionRow("Username", "@${user.username}", palette)
+                }
+                HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
+                GlassInfoSectionRow("Bergabung", joinedText, palette)
+            }
 
-            RowActionItem(Icons.Default.PersonAdd, "Simpan ke Kontak", null, palette) { /* Simpan kontak */ }
-        }
+            Spacer(modifier = Modifier.height(14.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Tab Media, File, Tautan
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(palette.surface)
-        ) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                ProfileTabs.forEachIndexed { index, title ->
-                    val isSelected = selectedTab == index
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { selectedTab = index }
-                            .padding(top = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = title,
-                            color = if (isSelected) palette.primary else palette.textSecondary,
-                            style = MaterialTheme.typography.titleSmall
+            // 5. Action List (Glass card, rounded 20dp): Bisukan, Pesan Sementara, Wallpaper, Simpan ke kontak
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .shadow(8.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Bisukan Notifikasi",
+                        color = palette.textPrimary,
+                        fontSize = 17.sp,
+                        fontFamily = InterFontFamily,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(
+                        checked = isMuted,
+                        onCheckedChange = { isMuted = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFF25D366)
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Box(
+                    )
+                }
+                HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
+
+                GlassRowActionItem(Icons.Default.Timer, "Pesan Sementara", "Mati", palette) { /* Pesan sementara */ }
+                HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
+
+                GlassRowActionItem(Icons.Default.Wallpaper, "Wallpaper & Suara", null, palette) { /* Wallpaper */ }
+                HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
+
+                GlassRowActionItem(Icons.Default.PersonAdd, "Simpan ke Kontak", null, palette) { /* Simpan kontak */ }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Tab Media, File, Tautan (Glass card)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .shadow(8.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+            ) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    ProfileTabs.forEachIndexed { index, title ->
+                        val isSelected = selectedTab == index
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(2.dp)
-                                .background(if (isSelected) palette.primary else Color.Transparent)
-                        )
+                                .weight(1f)
+                                .clickable { selectedTab = index }
+                                .padding(top = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = title,
+                                color = if (isSelected) Color(0xFF25D366) else palette.textSecondary,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(2.dp)
+                                    .background(if (isSelected) Color(0xFF25D366) else Color.Transparent)
+                            )
+                        }
+                    }
+                }
+                HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    when (selectedTab) {
+                        0 -> mediaContent()
+                        1 -> filesContent()
+                        else -> linksContent()
                     }
                 }
             }
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
-            Box(modifier = Modifier.fillMaxWidth()) {
-                when (selectedTab) {
-                    0 -> mediaContent()
-                    1 -> filesContent()
-                    else -> linksContent()
-                }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 6. Destructive (Glass card): Blokir, Laporkan (#FF3B30)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .shadow(8.dp, RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .hazeEffect(state = hazeState) {
+                        blurRadius = 20.dp
+                    }
+                    .background(
+                        if (isDark) Color.Black.copy(alpha = 0.60f) else Color.White.copy(alpha = 0.75f)
+                    )
+                    .border(0.5.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
+            ) {
+                GlassDestructiveButtonRow("Blokir Kontak", palette) { showBlockDialog = true }
+                HorizontalDivider(color = Color.White.copy(alpha = 0.15f), thickness = 0.5.dp)
+                GlassDestructiveButtonRow("Laporkan Kontak", palette) { showReportDialog = true }
             }
+
+            Spacer(modifier = Modifier.height(40.dp))
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Bagian Aksi Destruktif: Blokir, Laporkan
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(palette.surface)
-        ) {
-            DestructiveButtonRow("Blokir Kontak", palette) { showBlockDialog = true }
-            HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
-            DestructiveButtonRow("Laporkan Kontak", palette) { showReportDialog = true }
-        }
-
-        Spacer(modifier = Modifier.height(36.dp))
     }
 
     if (showBlockDialog) {
@@ -334,37 +436,35 @@ fun ProfileInfoScreen(
 }
 
 @Composable
-private fun ContactActionTile(
+private fun GlassContactActionTile(
     icon: ImageVector,
     label: String,
-    palette: NeontChatPalette,
     modifier: Modifier,
     onClick: () -> Unit
 ) {
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(palette.surface)
+            .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(
             modifier = Modifier
-                .size(36.dp)
+                .size(40.dp)
                 .clip(CircleShape)
-                .background(IosBlue.copy(alpha = 0.12f)),
+                .background(IosBlue.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = null, tint = IosBlue, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = null, tint = IosBlue, modifier = Modifier.size(24.dp))
         }
         Spacer(modifier = Modifier.height(6.dp))
-        Text(label, color = IosBlue, style = MaterialTheme.typography.bodySmall, fontSize = 12.sp)
+        Text(label, color = IosBlue, fontSize = 12.sp, fontFamily = InterFontFamily)
     }
 }
 
 @Composable
-private fun RowActionItem(
+private fun GlassRowActionItem(
     icon: ImageVector,
     title: String,
     value: String?,
@@ -380,32 +480,33 @@ private fun RowActionItem(
     ) {
         Icon(icon, contentDescription = null, tint = palette.textSecondary, modifier = Modifier.size(20.dp))
         Spacer(modifier = Modifier.width(12.dp))
-        Text(title, color = palette.textPrimary, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        Text(title, color = palette.textPrimary, fontSize = 17.sp, fontFamily = InterFontFamily, modifier = Modifier.weight(1f))
         if (!value.isNullOrBlank()) {
-            Text(value, color = palette.textSecondary, style = MaterialTheme.typography.bodyMedium)
+            Text(value, color = palette.textSecondary, fontSize = 15.sp, fontFamily = InterFontFamily)
         }
     }
 }
 
 @Composable
-private fun InfoSectionRow(label: String, value: String, palette: NeontChatPalette) {
+private fun GlassInfoSectionRow(label: String, value: String, palette: NeontChatPalette) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
-        Text(label, color = palette.textSecondary, style = MaterialTheme.typography.bodySmall)
+        Text(label, color = Color(0xFF8E8E93), fontSize = 13.sp, fontFamily = InterFontFamily)
         Spacer(modifier = Modifier.height(2.dp))
-        Text(value, color = palette.textPrimary, style = MaterialTheme.typography.bodyLarge)
+        Text(value, color = palette.textPrimary, fontSize = 17.sp, fontFamily = InterFontFamily)
     }
 }
 
 @Composable
-private fun DestructiveButtonRow(text: String, palette: NeontChatPalette, onClick: () -> Unit) {
+private fun GlassDestructiveButtonRow(text: String, palette: NeontChatPalette, onClick: () -> Unit) {
     Text(
         text = text,
-        color = palette.destructive,
-        style = MaterialTheme.typography.bodyLarge,
+        color = Color(0xFFFF3B30),
+        fontSize = 17.sp,
+        fontFamily = InterFontFamily,
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -422,7 +523,7 @@ private fun EmptyTabMessage(text: String) {
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text, color = neontChatPalette().textSecondary, style = MaterialTheme.typography.bodyMedium)
+        Text(text, color = Color(0xFF8E8E93), style = MaterialTheme.typography.bodyMedium)
     }
 }
 
