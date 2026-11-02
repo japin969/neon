@@ -8,7 +8,7 @@ import app.neon.com.data.repository.GroupRepository
 import app.neon.com.data.repository.MusicRepository
 import app.neon.com.data.repository.SocialRepository
 import app.neon.com.data.webrtc.WebRTCClient
-import app.neon.com.data.network.NexaDevApiService
+import app.neon.com.data.network.SiputApiService
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 import retrofit2.Retrofit
@@ -82,17 +82,6 @@ object AppModule {
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .callTimeout(90, TimeUnit.SECONDS)
-            // API NexaDev memblokir user-agent okhttp. Pakai UA browser.
-            .addInterceptor { chain ->
-                val request = chain.request().newBuilder()
-                    .header(
-                        "User-Agent",
-                        "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36"
-                    )
-                    .header("Accept", "application/json")
-                    .build()
-                chain.proceed(request)
-            }
             .build()
     }
 
@@ -100,7 +89,7 @@ object AppModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.nexadev.my.id/")
+            .baseUrl("https://api.siputzx.my.id/")
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -108,7 +97,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideNexaDevApiService(retrofit: Retrofit): NexaDevApiService {
-        return retrofit.create(NexaDevApiService::class.java)
+    fun provideSiputApiService(retrofit: Retrofit): SiputApiService {
+        return retrofit.create(SiputApiService::class.java)
     }
 }

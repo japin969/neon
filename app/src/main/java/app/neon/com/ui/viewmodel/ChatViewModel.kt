@@ -7,7 +7,7 @@ import javax.inject.Inject
 import androidx.lifecycle.viewModelScope
 import app.neon.com.data.model.ChatMessage
 import app.neon.com.data.repository.ChatRepository
-import app.neon.com.data.network.NexaDevApiService
+import app.neon.com.data.network.SiputApiService
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val repository: ChatRepository = ChatRepository(),
-    private val api: NexaDevApiService
+    private val api: SiputApiService
 ) : ViewModel() {
 
     private val auth: FirebaseAuth? = runCatching { FirebaseAuth.getInstance() }.getOrNull()
@@ -88,10 +88,10 @@ class ChatViewModel @Inject constructor(
             viewModelScope.launch {
                 Log.d("NeonAI", "Kirim ke AI: ${text.trim()}")
                 val replyText = try {
-                    val resp = api.askAi(text.trim())
-                    Log.d("NeonAI", "Response: status=${resp.status}, msgLen=${resp.data?.message?.length ?: 0}")
-                    if (resp.status && !resp.data?.message.isNullOrBlank()) {
-                        resp.data!!.message
+                    val resp = api.askAi(prompt = text.trim())
+                    Log.d("NeonAI", "Response: status=${resp.status}, msgLen=${resp.data?.response?.length ?: 0}")
+                    if (resp.status && !resp.data?.response.isNullOrBlank()) {
+                        resp.data!!.response
                     } else {
                         "AI ERROR: status=${resp.status}, data=${resp.data}"
                     }
