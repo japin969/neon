@@ -81,6 +81,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
@@ -280,7 +281,36 @@ fun ChatDetailContent(
                                 .padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("✨", fontSize = 64.sp)
+
+                            // Logo Neon AI — bulat gradient + huruf N
+                            Box(
+                                modifier = Modifier
+                                    .size(72.dp)
+                                    .shadow(8.dp, CircleShape, ambientColor = Color(0xFF7B5CFA).copy(alpha = 0.4f))
+                                    .clip(CircleShape)
+                                    .background(
+                                        Brush.sweepGradient(
+                                            colors = listOf(
+                                                Color(0xFFFF4FA3),
+                                                Color(0xFF9B6BFF),
+                                                Color(0xFF4AA8FF),
+                                                Color(0xFF6BE3FF),
+                                                Color(0xFF9B6BFF),
+                                                Color(0xFFFF4FA3)
+                                            )
+                                        )
+                                    )
+                                    .border(1.dp, Color.White.copy(alpha = 0.55f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "N",
+                                    color = Color.White,
+                                    fontFamily = InterFontFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 34.sp
+                                )
+                            }
                             Spacer(modifier = Modifier.height(14.dp))
                             Text(
                                 text = "Neon AI",

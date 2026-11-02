@@ -49,6 +49,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -63,6 +64,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -104,6 +106,8 @@ fun ChatListScreen(
     val palette = neontChatPalette()
     val isDark = isSystemInDarkTheme()
     val hazeState = remember { HazeState() }
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(Unit) { focusManager.clearFocus() }
     val listState = rememberLazyListState()
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf(ChatFilterType.ALL) }
@@ -416,24 +420,36 @@ fun ChatListScreen(
                     }
                 }
 
-                // 7. FAB Neon AI (60dp CircleShape, Brush.linearGradient(#25D366, #128C7E), border 0.5dp White alpha 0.4, shadow 12dp)
+                // 7. FAB Neon AI — bulat gradient Meta-AI-style dengan huruf "N"
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(16.dp)
                         .size(60.dp)
-                        .shadow(12.dp, CircleShape, ambientColor = Color(0xFF25D366).copy(alpha = 0.35f))
+                        .shadow(12.dp, CircleShape, ambientColor = Color(0xFF7B5CFA).copy(alpha = 0.45f))
                         .clip(CircleShape)
-                        .background(glassGreenGradientBrush())
-                        .border(0.5.dp, Color.White.copy(alpha = 0.40f), CircleShape)
+                        .background(
+                            Brush.sweepGradient(
+                                colors = listOf(
+                                    Color(0xFFFF4FA3),
+                                    Color(0xFF9B6BFF),
+                                    Color(0xFF4AA8FF),
+                                    Color(0xFF6BE3FF),
+                                    Color(0xFF9B6BFF),
+                                    Color(0xFFFF4FA3)
+                                )
+                            )
+                        )
+                        .border(1.dp, Color.White.copy(alpha = 0.55f), CircleShape)
                         .clickable { showAiDialog = true },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "Neon AI",
-                        tint = Color.White,
-                        modifier = Modifier.size(28.dp)
+                    Text(
+                        text = "N",
+                        color = Color.White,
+                        fontFamily = InterFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 28.sp
                     )
                 }
             }
