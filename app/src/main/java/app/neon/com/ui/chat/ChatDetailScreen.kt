@@ -18,7 +18,8 @@ fun ChatDetailScreen(
     chatPartnerName: String = "Aura Cantika",
     chatPartnerAvatar: String = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
     onBackClick: () -> Unit = {},
-    onCallClick: (isVideo: Boolean) -> Unit = {}
+    onCallClick: (isVideo: Boolean) -> Unit = {},
+    onMoreClick: () -> Unit = {}
 ) {
     val messages by chatViewModel.messages.collectAsState()
 
@@ -45,6 +46,7 @@ fun ChatDetailScreen(
         },
         onDeleteMessage = { message, forEveryone ->
             chatViewModel.deleteMessage(chatId, message.msgId, forEveryone)
-        }
+        },
+        onMoreClick = onMoreClick
     )
 }

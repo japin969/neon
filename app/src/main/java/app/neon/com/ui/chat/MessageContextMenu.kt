@@ -37,7 +37,6 @@ import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Forward
 import androidx.compose.material.icons.filled.Info
@@ -92,9 +91,9 @@ internal fun MessageContextMenu(
     onToggleStar: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    onSelect: () -> Unit = {},
     onMessageInfo: () -> Unit = {},
     onShare: () -> Unit = {},
-    onSaveMedia: () -> Unit = {},
     onSelectMode: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -242,7 +241,6 @@ internal fun MessageContextMenu(
                             HorizontalDivider(color = Color.White.copy(alpha = 0.20f), thickness = 0.5.dp)
 
                             // Simpan Media
-                            ContextMenuActionRow(Icons.Default.Download, "Simpan media", palette.textPrimary, onSaveMedia)
                             HorizontalDivider(color = Color.White.copy(alpha = 0.20f), thickness = 0.5.dp)
 
                             // Pilih

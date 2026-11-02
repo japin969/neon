@@ -56,7 +56,7 @@ internal data class NeontChatPalette(
 private val LightChatPalette = NeontChatPalette(
     listBackground = Color(0xFFF2F2F7),
     detailBackground = Color(0xFFEFEAE2),
-    bubbleOutgoing = Color(0xFFDCF8C6),
+    bubbleOutgoing = Color(0xFFE7FFDB),
     bubbleIncoming = Color(0xFFFFFFFF),
     primary = Color(0xFF25D366),
     primaryDark = Color(0xFF128C7E),
@@ -77,7 +77,7 @@ private val LightChatPalette = NeontChatPalette(
 private val DarkChatPalette = NeontChatPalette(
     listBackground = Color(0xFF1C1C1E),
     detailBackground = Color(0xFF0B141A),
-    bubbleOutgoing = Color(0xFF005C4B),
+    bubbleOutgoing = Color(0xFF164A3E),
     bubbleIncoming = Color(0xFF202C33),
     primary = Color(0xFF25D366),
     primaryDark = Color(0xFF128C7E),

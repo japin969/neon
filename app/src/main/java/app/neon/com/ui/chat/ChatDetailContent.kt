@@ -160,12 +160,16 @@ fun ChatDetailContent(
     val isDark = isSystemInDarkTheme()
     val hazeState = remember { HazeState() }
     val focusManager = LocalFocusManager.current
+    val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val maxBubbleWidth = (LocalConfiguration.current.screenWidthDp * 0.8f).dp
 
     var input by rememberSaveable { mutableStateOf("") }
     var replyingToId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedMessageIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var isSelectionMode by remember { mutableStateOf(false) }
+    var showMoreMenu by remember { mutableStateOf(false) }
     var pinnedId by rememberSaveable { mutableStateOf<String?>(null) }
     var starredIds by rememberSaveable(stateSaver = DetailStringSetSaver) { mutableStateOf(emptySet<String>()) }
     var actionMessageId by remember { mutableStateOf<String?>(null) }
@@ -224,7 +228,7 @@ fun ChatDetailContent(
                 onBack = onBackClick,
                 onCall = { onCallClick(false) },
                 onVideo = { onCallClick(true) },
-                onMore = onMoreClick,
+                onMore = { showMoreMenu = true },
                 onTitleClick = onTopBarClick
             )
 
@@ -474,6 +478,8 @@ fun ChatDetailContent(
                 actionMessageId = null
             },
             onCopy = {
+                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("pesan", actionMessage.text))
                 actionMessageId = null
             },
             onForward = {
@@ -505,12 +511,17 @@ fun ChatDetailContent(
                 actionMessageId = null
             },
             onShare = {
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(android.content.Intent.EXTRA_TEXT, actionMessage.text)
+                }
+                context.startActivity(android.content.Intent.createChooser(intent, "Bagikan"))
                 actionMessageId = null
             },
-            onSaveMedia = {
-                actionMessageId = null
-            },
+
             onSelectMode = {
+                selectedMessageIds = setOf(actionMessage.msgId)
+                isSelectionMode = true
                 actionMessageId = null
             }
         )
@@ -531,6 +542,45 @@ fun ChatDetailContent(
     }
 
     // Dialog Konfirmasi Hapus Pesan
+    // Dialog Menu Titik Tiga
+    if (showMoreMenu) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showMoreMenu = false },
+            containerColor = if (isDark) Color(0xFF1C1C1E) else Color.White,
+            title = { Text("Menu Chat", color = palette.textPrimary) },
+            text = {
+                Column {
+                    Text("Info Kontak/Grup", color = IosBlue, modifier = Modifier.padding(vertical = 12.dp).clickable { showMoreMenu = false })
+                    Text("Media, Link, Dokumen", color = IosBlue, modifier = Modifier.padding(vertical = 12.dp).clickable { showMoreMenu = false })
+                    Text("Bersihkan Chat", color = IosBlue, modifier = Modifier.padding(vertical = 12.dp).clickable { showMoreMenu = false })
+                    Text("Hapus Chat", color = palette.destructive, modifier = Modifier.padding(vertical = 12.dp).clickable { showMoreMenu = false })
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    // Dialog Info Pesan
+    val infoTarget = showInfoTargetId?.let { byId[it] }
+    if (infoTarget != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showInfoTargetId = null },
+            containerColor = if (isDark) Color(0xFF1C1C1E) else Color.White,
+            title = { Text("Info Pesan", color = palette.textPrimary) },
+            text = {
+                Column {
+                    Text("Dikirim: ${infoTarget.time}", color = palette.textSecondary)
+                    Text("Pengirim: ${if (infoTarget.isFromMe) "Anda" else infoTarget.senderName}", color = palette.textSecondary)
+                    Text("ID: ${infoTarget.msgId}", color = palette.textSecondary)
+                    Text("Status: ${if (infoTarget.isRead) "Dibaca" else "Terkirim"}", color = palette.textSecondary)
+                }
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { showInfoTargetId = null }) { Text("Tutup") }
+            }
+        )
+    }
+
     val deleteTarget = deleteTargetId?.let { byId[it] }
     if (deleteTarget != null) {
         DeleteMessageDialog(
