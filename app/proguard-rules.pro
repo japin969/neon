@@ -22,3 +22,32 @@
 
 # Coroutines
 -keepclassmembers class kotlinx.coroutines.** { volatile <fields>; }
+
+# ==========================================
+# RETROFIT + GSON R8 FIXES
+# ==========================================
+-keepattributes Signature
+-keepattributes *Annotation*
+-keepattributes Exceptions
+
+# Gson
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken
+-keep public class * implements java.lang.reflect.Type
+
+# Retrofit
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn retrofit2.**
+-dontwarn javax.annotation.**
+-keep,allowobfuscation,allowshrinking interface retrofit2.Call
+-keep,allowobfuscation,allowshrinking class retrofit2.Response
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+-keep,allowobfuscation,allowshrinking class retrofit2.*
+-keepclasseswithmembers class * {
+    @retrofit2.http.* <methods>;
+}
+
+# Model AI Siput
+-keep class app.neon.com.data.network.SiputChatResponse { *; }
+-keep class app.neon.com.data.network.SiputChatData { *; }
