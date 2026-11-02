@@ -1,5 +1,6 @@
 package app.neon.com.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -85,8 +86,19 @@ class ChatViewModel @Inject constructor(
             )
             _messages.value = _messages.value + userMsg
             viewModelScope.launch {
-                val replyText = runCatching { api?.askAi(text.trim())?.data?.message }.getOrNull()
-                    ?: "Maaf, Neon AI sedang tidak tersedia."
+                Log.d("NeonAI", "Kirim ke AI: ${text.trim()}")
+                val replyText = try {
+                    val resp = api.askAi(text.trim())
+                    Log.d("NeonAI", "Response: status=${resp.status}, msgLen=${resp.data?.message?.length ?: 0}")
+                    if (resp.status && !resp.data?.message.isNullOrBlank()) {
+                        resp.data!!.message
+                    } else {
+                        "AI ERROR: status=${resp.status}, data=${resp.data}"
+                    }
+                } catch (e: Exception) {
+                    Log.e("NeonAI", "askAi gagal", e)
+                    "AI ERROR: ${e.javaClass.simpleName} - ${e.message ?: "no message"}"
+                }
                 val aiMsg = ChatMessage(
                     msgId = "ai_${System.currentTimeMillis()}",
                     chatId = targetChat, senderId = NEON_AI_CHAT_ID, senderName = "Neon AI",
